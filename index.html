@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Roblox Clone</title>
+    <title>Robringer Clone</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
         body {
             margin: 0;
@@ -49,25 +50,61 @@
             align-items: center;
             gap: 5px;
             font-weight: bold;
-            color: #ffd700; /* Gold color for Robux */
+            color: #ffd700;
             font-size: 1.1em;
             text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
         }
         .robux-icon {
             width: 20px;
             height: 20px;
-            background-color: #ffd700; /* Gold */
-            border-radius: 50%; /* Circle for icon */
+            background-color: #ffd700;
+            border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 0.8em;
-            color: #8B4513; /* Brown for 'R' */
+            color: #8B4513;
             font-family: 'Arial Black', sans-serif;
         }
 
+        /* --- Settings and Notifications Header Nav --- */
+        .header-extra-nav {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            color: white;
+        }
+        .header-extra-nav a {
+            color: white;
+            text-decoration: none;
+            transition: color 0.2s ease;
+            position: relative;
+        }
+        .header-extra-nav a:hover {
+            color: #aaddff;
+        }
+        .header-extra-nav .notification-icon {
+            font-size: 1.2em;
+        }
+        .header-extra-nav .notification-icon .badge {
+            position: absolute;
+            top: -5px;
+            right: -8px;
+            background-color: #ff4136;
+            color: white;
+            font-size: 0.7em;
+            padding: 2px 5px;
+            border-radius: 50%;
+            display: none;
+            min-width: 15px;
+            text-align: center;
+        }
+        .header-extra-nav .notification-icon .badge.visible {
+            display: block;
+        }
 
-        /* --- Home Page Specific Styles --- */
+
+        /* --- Home Page Specific Styles (Original content left here) --- */
         .home-content {
             display: flex;
             gap: 20px;
@@ -168,7 +205,7 @@
             padding-bottom: 8px;
         }
         .get-robux-box button {
-            background: #00aaff; /* Roblox blue for Robux */
+            background: #00aaff;
             color: white;
             border: none;
             padding: 10px 15px;
@@ -226,7 +263,7 @@
 
         .featured-video-box {
             background: white;
-            border: 1px solid #ccc;
+            border: 1-px solid #ccc;
             border-radius: 8px;
             padding: 15px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
@@ -369,8 +406,8 @@
             background: #0055aa;
         }
 
-        /* --- Avatar Editor Styles --- */
-        .avatar-editor-container {
+        /* --- Character Editor Styles --- */
+        .character-editor-container {
             max-width: 800px;
             margin: 20px auto;
             background: white;
@@ -382,18 +419,27 @@
             flex-direction: column;
             align-items: center;
         }
-
-        /* NEW 3D CANVAS STYLE */
-        canvas#avatar3DCanvas {
-            display: block;
-            margin: 10px auto;
-            border: 2px solid #ccc;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-            background-color: #f0f0f0; /* Default background for Three.js initialization */
+        .editor-content {
+            display: flex;
+            gap: 20px;
+            width: 100%;
+            align-items: flex-start;
         }
-
-        .avatar-tools {
+        .editor-panel {
+            flex-basis: 350px;
+            flex-shrink: 0;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            background: #f9f9f9;
+        }
+        .editor-panel h4 {
+            margin-top: 0;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+            margin-bottom: 10px;
+        }
+        .character-tools {
             text-align: center;
             margin-bottom: 20px;
             display: flex;
@@ -401,52 +447,40 @@
             gap: 15px;
             flex-wrap: wrap;
         }
-        .hat-button-container {
-            background: #e00000; /* Default red for hat buttons */
+        .character-button-container {
             border-radius: 8px;
             padding: 5px;
             cursor: pointer;
-            transition: background 0.2s ease, transform 0.1s ease, opacity 0.2s ease;
+            transition: transform 0.1s ease, box-shadow 0.2s ease;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             width: 100px;
             height: 120px;
-            opacity: 1; /* Default to visible */
+            background: #dcdcdc; /* Neutral background */
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-        .hat-button-container[data-color="blue"] { background: #0000e0; }
-        .hat-button-container[data-color="green"] { background: #00e000; }
-        .hat-button-container[data-type="none"] { background: #888; } /* For 'No Hat' */
-
-        .hat-button-container:hover {
-            background: #b30000;
-            transform: scale(1.03);
+        .character-button-container.owned {
+            cursor: pointer;
+            background: #00aaff;
         }
-        .hat-button-container[data-color="blue"]:hover { background: #0000b3; }
-        .hat-button-container[data-color="green"]:hover { background: #00b300; }
-        .hat-button-container[data-type="none"]:hover { background: #666; }
-
-        /* Styles for unowned items */
-        .hat-button-container.owned-false {
-            opacity: 0.5;
+        .character-button-container.owned:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            background: #0077cc;
+        }
+        .character-button-container.not-owned {
             cursor: not-allowed;
-            border: 2px dashed #999;
-            pointer-events: none; /* Crucial for disabling clicks */
+            opacity: 0.5;
+            background: #dcdcdc;
+            box-shadow: none;
         }
-        .hat-button-container.owned-false:hover {
-             transform: none; /* Prevent scale on hover if not owned */
-             /* Maintain original background color for disabled items on hover */
-             background: var(--original-bg-color); /* Set this via JS or more specific CSS */
+        .character-button-container.not-owned:hover {
+            transform: none;
         }
-        /* Specific hover styles for unowned state to revert to original color */
-        .hat-button-container.owned-false[data-color="red"]:hover { background: #e00000; }
-        .hat-button-container.owned-false[data-color="blue"]:hover { background: #0000e0; }
-        .hat-button-container.owned-false[data-color="green"]:hover { background: #00e000; }
-        .hat-button-container.owned-false[data-type="none"]:hover { background: #888; } /* Not strictly needed for 'none' as it's always owned, but good for consistency */
 
-
-        .hat-button-container canvas {
+        .character-button-container canvas {
             display: block;
             margin: 0 auto;
             border-radius: 4px;
@@ -454,11 +488,14 @@
             width: 90px;
             height: 90px;
         }
-        .hat-button-container span {
-            color: white;
+        .character-button-container span {
+            color: #333;
             font-weight: bold;
             margin-top: 5px;
             font-size: 0.8em;
+        }
+        .character-button-container.owned span {
+            color: white;
         }
         .avatar-action-button {
             background: #555;
@@ -479,12 +516,28 @@
             margin: 0 auto;
             border: 2px solid #ccc;
             border-radius: 8px;
-            /* Updated background and shadow for improved 2D avatar */
-            background: radial-gradient(circle at 70% 30%, #aaddff, #6699cc); /* Softer blue gradient */
+            background: radial-gradient(circle at 70% 30%, #aaddff, #6699cc);
             box-shadow: 0 8px 16px rgba(0,0,0,0.3), inset 0 0 15px rgba(255,255,255,0.5);
         }
+        .color-palette {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        .color-swatch {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: 2px solid #333;
+            cursor: pointer;
+            transition: transform 0.1s ease;
+        }
+        .color-swatch:hover {
+            transform: scale(1.1);
+        }
 
-        /* --- Games Page Styles --- */
+        /* --- Games Page Styles (Original content left here) --- */
         .games-container {
             display: flex;
             gap: 20px;
@@ -593,17 +646,16 @@
             grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
             gap: 15px;
         }
-        /* Styling for game cards - generic 2012-like look, refine with user input */
         .game-card {
             background: #fdfdfd;
             border: 1px solid #ddd;
             border-radius: 6px;
             overflow: hidden;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1); /* Slightly more prominent shadow */
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
             text-align: center;
             transition: transform 0.1s ease, box-shadow 0.1s ease;
             position: relative;
-            padding-bottom: 60px; /* Space for button at bottom */
+            padding-bottom: 60px;
         }
         .game-card:hover {
             transform: translateY(-3px);
@@ -615,7 +667,6 @@
             object-fit: cover;
             display: block;
             border-bottom: 1px solid #eee;
-            /* Simple border for 2012 look */
             border-top-left-radius: 6px;
             border-top-right-radius: 6px;
         }
@@ -634,7 +685,7 @@
         .game-card .game-players {
             font-size: 0.8em;
             color: #666;
-            margin-bottom: 10px; /* Space above play button */
+            margin-bottom: 10px;
         }
         .game-card .game-actions {
             position: absolute;
@@ -645,21 +696,21 @@
         }
         .game-card .play-button {
             display: block;
-            width: calc(100% - 20px); /* Adjust width for padding */
-            background: #00aaff; /* Classic Roblox blue */
+            width: calc(100% - 20px);
+            background: #00aaff;
             color: white;
             border: none;
             padding: 10px 15px;
             border-radius: 5px;
             cursor: pointer;
             font-weight: bold;
-            text-decoration: none; /* For the <a> tag */
+            text-decoration: none;
             transition: background 0.2s ease;
             font-size: 0.9em;
-            box-shadow: 0 2px 3px rgba(0,0,0,0.2); /* Button shadow */
+            box-shadow: 0 2px 3px rgba(0,0,0,0.2);
         }
         .game-card .play-button:hover {
-            background: #0088cc; /* Darker blue on hover */
+            background: #0088cc;
         }
 
         .game-pagination {
@@ -685,7 +736,7 @@
             margin: 0 10px;
         }
 
-        /* --- Catalog Page Styles --- */
+        /* --- Catalog Page Styles (Original content left here) --- */
         .catalog-container {
             max-width: 1200px;
             margin: 20px auto;
@@ -695,12 +746,28 @@
             padding: 20px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-        .catalog-container h2 {
-            margin-top: 0;
-            margin-bottom: 20px;
-            color: #333;
+        .catalog-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             border-bottom: 1px solid #eee;
             padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .catalog-content-wrapper {
+            display: flex;
+            gap: 20px;
+        }
+        .catalog-sidebar {
+            width: 250px;
+            flex-shrink: 0;
+        }
+        .catalog-main {
+            flex-grow: 1;
+        }
+        .catalog-container h2 {
+            margin-top: 0;
+            color: #333;
         }
         .catalog-grid {
             display: grid;
@@ -724,7 +791,7 @@
         .catalog-item-card img {
             width: 100%;
             height: 120px;
-            object-fit: contain; /* Keep aspect ratio, fit inside */
+            object-fit: contain;
             background: #f0f0f0;
             border-bottom: 1px solid #eee;
         }
@@ -736,7 +803,7 @@
             font-size: 0.95em;
             margin-bottom: 5px;
             color: #333;
-            height: 40px; /* Fixed height for name */
+            height: 40px;
             overflow: hidden;
             text-overflow: ellipsis;
             display: -webkit-box;
@@ -748,7 +815,7 @@
             align-items: center;
             justify-content: center;
             font-weight: bold;
-            color: #ffd700; /* Gold for Robux */
+            color: #ffd700;
             font-size: 1.1em;
             margin-bottom: 10px;
         }
@@ -759,7 +826,7 @@
             margin-right: 3px;
         }
         .catalog-item-card .buy-button {
-            background: #00aaff; /* Classic Roblox blue */
+            background: #00aaff;
             color: white;
             border: none;
             padding: 8px 12px;
@@ -790,7 +857,7 @@
         }
 
 
-        /* --- Profile Page Styles --- */
+        /* --- Profile Page Styles (Original content left here) --- */
         .profile-container {
             max-width: 800px;
             margin: 20px auto;
@@ -828,7 +895,7 @@
             background: #f0f0f0;
             box-shadow: inset 0 0 10px rgba(0,0,0,0.1);
             margin: 10px auto;
-            display: block; /* Ensures it's centered */
+            display: block;
         }
         .profile-inventory-grid {
             display: grid;
@@ -948,7 +1015,7 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             display: flex;
             flex-direction: column;
-            height: 600px; /* Fixed height for chat window */
+            height: 600px;
         }
         .chat-container h2 {
             margin-top: 0;
@@ -970,18 +1037,18 @@
             gap: 8px;
         }
         .chat-message {
-            background: #e1ffc7; /* Light green for sent messages */
+            background: #e1ffc7;
             padding: 8px 12px;
             border-radius: 15px;
             max-width: 80%;
-            align-self: flex-end; /* Sent messages align right */
+            align-self: flex-end;
             word-wrap: break-word;
             font-size: 0.95em;
             box-shadow: 0 1px 2px rgba(0,0,0,0.1);
         }
         .chat-message.received {
-            background: #dcf8c6; /* Lighter green for received (not implemented in this version) */
-            align-self: flex-start; /* Received messages align left */
+            background: #dcf8c6;
+            align-self: flex-start;
         }
         .chat-message .username {
             font-weight: bold;
@@ -1013,6 +1080,415 @@
         .chat-input-form button:hover {
             background: #0055aa;
         }
+        /* --- Forum Page Styles --- */
+        .forum-container {
+            max-width: 900px;
+            margin: 20px auto;
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .forum-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 15px;
+            margin-bottom: 15px;
+        }
+        .forum-header h2 {
+            margin: 0;
+            color: #333;
+            font-size: 1.5em;
+        }
+        .forum-header button {
+            background: #00aaff;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+        .forum-header button:hover {
+            background: #0088cc;
+        }
+        .forum-topic-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .forum-topic-card {
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: background 0.2s ease, box-shadow 0.2s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .forum-topic-card:hover {
+            background: #f0f0f0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .forum-topic-card .topic-title {
+            font-weight: bold;
+            color: #0077cc;
+            font-size: 1.1em;
+        }
+        .forum-topic-card .topic-meta {
+            font-size: 0.85em;
+            color: #666;
+            text-align: right;
+        }
+        .forum-topic-card .topic-author {
+            font-weight: bold;
+        }
+        .forum-topic-card .topic-replies {
+            margin-top: 5px;
+            color: #888;
+        }
+        .new-topic-form {
+            background: #f0f0f0;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            display: none; /* Hide by default */
+        }
+        .new-topic-form h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        .new-topic-form input, .new-topic-form textarea {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .new-topic-form textarea {
+            min-height: 100px;
+        }
+        .new-topic-form button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+        .new-topic-form button:hover {
+            background: #45a049;
+        }
+        /* --- Topic Detail Modal Styles --- */
+        .forum-detail-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+        }
+        .forum-detail-modal {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 800px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            position: relative;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .forum-detail-modal .close-button {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 1.5em;
+            cursor: pointer;
+            color: #555;
+            background: none;
+            border: none;
+        }
+        .forum-detail-modal h3 {
+            margin-top: 0;
+            color: #002b5c;
+            font-size: 1.6em;
+            margin-bottom: 10px;
+        }
+        .forum-detail-modal .topic-info {
+            font-size: 0.9em;
+            color: #777;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        .forum-detail-modal .topic-content {
+            background: #f0f0f0;
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            line-height: 1.6;
+            color: #333;
+        }
+        .forum-detail-modal .replies-section h4 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            color: #333;
+            font-size: 1.3em;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 8px;
+        }
+        .forum-detail-modal .reply-item {
+            background: #fcfcfc;
+            border: 1px solid #eee;
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 10px;
+            font-size: 0.95em;
+        }
+        .forum-detail-modal .reply-item .reply-author {
+            font-weight: bold;
+            color: #0077cc;
+            margin-bottom: 5px;
+        }
+        .forum-detail-modal .reply-item .reply-timestamp {
+            font-size: 0.75em;
+            color: #999;
+            margin-top: 5px;
+            text-align: right;
+        }
+        .forum-detail-modal .reply-form textarea {
+            width: calc(100% - 22px);
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            min-height: 80px;
+            margin-bottom: 10px;
+        }
+        .forum-detail-modal .reply-form button {
+            background: #00aaff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .forum-detail-modal .reply-form button:hover {
+            background: #0088cc;
+        }
+        /* --- Settings Page Styles --- */
+        .settings-container {
+            max-width: 800px;
+            margin: 20px auto;
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .settings-container h2 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            color: #333;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        .settings-section {
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .settings-section h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            color: #555;
+            font-size: 1.2em;
+        }
+        .settings-section label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #666;
+        }
+        .settings-section input[type="text"], .settings-section input[type="password"] {
+            width: calc(100% - 22px);
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            font-size: 1em;
+        }
+        .settings-section button {
+            background: #0077cc;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.2s ease;
+        }
+        .settings-section button:hover {
+            background: #0055aa;
+        }
+        .delete-account-button {
+            background: #d9534f;
+            margin-top: 10px;
+        }
+        .delete-account-button:hover {
+            background: #c9302c;
+        }
+        /* --- Notifications Page Styles --- */
+        .notifications-container {
+            max-width: 800px;
+            margin: 20px auto;
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .notifications-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 15px;
+            margin-bottom: 15px;
+        }
+        .notifications-header h2 {
+            margin: 0;
+            color: #333;
+            font-size: 1.5em;
+        }
+        .notifications-header button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+        .notifications-header button:hover {
+            background: #45a049;
+        }
+        .notification-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .notification-item {
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 10px;
+            transition: background 0.2s ease;
+        }
+        .notification-item:hover {
+            background: #f0f0f0;
+        }
+        .notification-item.unread {
+            background: #e6f7ff;
+            border-left: 5px solid #00aaff;
+        }
+        .notification-item .notification-message {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        .notification-item .notification-timestamp {
+            font-size: 0.8em;
+            color: #888;
+        }
+        /* --- Admin Panel Styles --- */
+        .admin-panel-container {
+            max-width: 1000px;
+            margin: 20px auto;
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .admin-panel-container h2 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            color: #333;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        .admin-section {
+            margin-bottom: 30px;
+        }
+        .admin-section h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            color: #555;
+            font-size: 1.3em;
+            border-bottom: 1px solid #f0f0f0;
+            padding-bottom: 8px;
+        }
+        .admin-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        .admin-table th, .admin-table td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+            font-size: 0.9em;
+        }
+        .admin-table th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+            color: #333;
+        }
+        .admin-table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .admin-table .admin-actions button {
+            background: #0077cc;
+            color: white;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8em;
+            margin-right: 5px;
+        }
+        .admin-table .admin-actions button.delete {
+            background: #d9534f;
+        }
+        .admin-table .admin-actions button:hover {
+            opacity: 0.9;
+        }
+        .admin-table .admin-actions button.toggle-admin {
+            background-color: #5cb85c;
+        }
+        .admin-table .admin-actions button.toggle-admin.remove {
+            background-color: #f0ad4e;
+        }
         footer {
             background: #dcdcdc;
             text-align: center;
@@ -1031,37 +1507,111 @@
             position: fixed;
             top: 20px;
             right: 20px;
-            background-color: #4CAF50; /* Green for success */
+            background-color: #4CAF50;
             color: white;
             padding: 15px;
             border-radius: 8px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
             z-index: 1000;
-            display: none; /* Hidden by default */
+            display: none;
             opacity: 0;
             transition: opacity 0.3s ease-in-out;
         }
         #messageBox.error {
-            background-color: #f44336; /* Red for error */
+            background-color: #f44336;
+        }
+        /* --- New Player Profile Modal Styles --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+        }
+        .profile-modal {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+        .profile-modal h3 {
+            margin-top: 0;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+            font-size: 1.3em;
+            color: #002b5c;
+        }
+        .profile-modal img {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #ccc;
+            margin-bottom: 15px;
+        }
+        .profile-modal p {
+            font-size: 1em;
+            color: #555;
+            margin: 5px 0;
+        }
+        .profile-modal .modal-buttons {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+        .profile-modal .modal-buttons button {
+            background: #0077cc;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.2s ease;
+        }
+        .profile-modal .modal-buttons button:hover {
+            background: #0055aa;
+        }
+        .profile-modal .modal-buttons button.close {
+            background: #6c757d;
+        }
+        .profile-modal .modal-buttons button.close:hover {
+            background: #5a6268;
         }
     </style>
 </head>
 <body>
-    <div id="messageBox"></div>
     <header>
-        <h1>ROBLOX</h1>
+        <h1>Robringer Clone</h1>
         <nav>
-            <a href="#" id="homeNavLink">Home</a>
-            <a href="#" id="gamesNavLink">Games</a>
-            <a href="#" id="avatarNavLink">Avatar</a>
-            <a href="#" id="catalogNavLink">Catalog</a>
-            <a href="#" id="profileNavLink">Profile</a>
-            <a href="#" id="friendsNavLink">Friends</a>
-            <a href="#" id="chatNavLink">Chat</a>
+            <a href="#" onclick="updateTabContent('homeTab')">Home</a>
+            <a href="#" onclick="updateTabContent('gamesTab')">Games</a>
+            <a href="#" onclick="updateTabContent('avatarTab')">Avatar</a> <a href="#" onclick="updateTabContent('catalogTab')">Catalog</a> <a href="#" onclick="updateTabContent('profileTab')">Profile</a>
+            <a href="#" onclick="updateTabContent('friendsTab')">Friends</a>
+            <a href="#" onclick="updateTabContent('chatTab')">Chat</a>
+            <a href="#" onclick="updateTabContent('forumTab')">Forum</a>
         </nav>
-        <div class="robux-display">
-            <span class="robux-icon">R</span>
-            <span id="robuxBalance">0</span>
+        <div class="header-extra-nav">
+            <div class="robux-display">
+                <span class="robux-icon">R</span>
+                <span id="robuxBalance">0</span>
+            </div>
+            <a href="#" onclick="updateTabContent('notificationsTab')" class="notification-icon">
+                &#9993;
+                <span class="badge" id="notificationBadge"></span>
+            </a>
+            <a href="#" onclick="updateTabContent('settingsTab')">&#9881;</a>
+            <a href="#" onclick="updateTabContent('adminTab')" id="adminLink" style="display:none;">Admin</a>
         </div>
     </header>
 
@@ -1069,56 +1619,57 @@
         <div id="homeTab" class="tab active">
             <div class="home-content">
                 <div class="left-column">
-                    <div class="member-login-box">
-                        <div id="loggedInSection" style="display: none;">
-                            <h3>Welcome, <span id="loggedInUsername"></span>!</h3>
-                            <p>Current Robux: <span id="displayRobuxBalance"></span></p>
-                            <button class="member-login-button logout-button" id="logoutButton">Log Out</button>
-                        </div>
-                        <div id="loggedOutSection">
-                            <h3>Member Login</h3>
+                    <div class="member-login-box" id="memberLoginBox">
+                        <h3>Member Login</h3>
+                        <form id="loginForm">
                             <label for="username">Username:</label>
-                            <input type="text" id="username" placeholder="Enter your username">
+                            <input type="text" id="username" name="username" required>
                             <label for="password">Password:</label>
-                            <input type="password" id="password" placeholder="Enter your password">
-                            <button class="member-login-button" id="loginButton">Login</button>
-                            <div class="forgot-password"><a href="#">Forgot password?</a></div>
-                            <div class="sign-up-link">Don't have an account? <a href="#">Sign Up</a></div>
-                        </div>
+                            <input type="password" id="password" name="password" required>
+                            <button type="submit">Login</button>
+                            <div class="forgot-password"><a href="#">Forgot Password?</a></div>
+                            <div class="sign-up-link"><a href="#">Sign Up</a></div>
+                        </form>
                     </div>
+
                     <div class="get-robux-box">
-                        <h3>Get Robux</h3>
-                        <p>Earn more Robux to customize your avatar and play games!</p>
-                        <button id="getRobuxButton">Get Robux Now!</button>
+                        <h3>Get Robux!</h3>
+                        <button onclick="addRobux(100)">Buy 100 R</button>
+                    </div>
+
+                    <div class="home-ad-banner">
+                        <img src="https://via.placeholder.com/300x90/3498db/ffffff?text=Advertise+Your+Game" alt="Ad Banner">
                     </div>
                 </div>
+
                 <div class="main-content-home">
-                    <div class="home-ad-banner">
-                        <img src="https://via.placeholder.com/728x90?text=Roblox+Ad+Banner" alt="Advertisement">
-                    </div>
                     <div class="featured-video-box">
-                        <div class="video-placeholder">Featured Video</div>
+                        <div class="video-placeholder">Featured Game Trailer</div>
                         <div>
-                            <h3>Explore the Latest Games!</h3>
-                            <p>Check out our newest and most popular games. Join millions of players and start your adventure today!</p>
-                            <button class="play-now-button">Play Now</button>
+                            <h2>Play The Ultimate Roblox Clone!</h2>
+                            <p>Jump into a world of adventure, creation, and friendship. Start your journey now! It's completely free to play. Join millions of users!</p>
+                            <div class="play-now-button">PLAY NOW</div>
                         </div>
                     </div>
+
                     <div class="roblox-news-box">
-                        <h3>Roblox News</h3>
+                        <h3>Roblox Clone News</h3>
                         <ul>
-                            <li><a href="#">New Event: The Great Blox Hunt!</a></li>
-                            <li><a href="#">Developer Spotlight: Builderman's Creations</a></li>
-                            <li><a href="#">Upcoming Features: Dynamic Lighting</a></li>
+                            <li><a href="#">New 'Sky Tower' Game Released!</a> - October 15, 2025</li>
+                            <li><a href="#">Server Maintenance Scheduled</a> - October 14, 2025</li>
+                            <li><a href="#">2x Experience Weekend Event!</a> - October 12, 2025</li>
                         </ul>
                     </div>
+
                     <div class="featured-game-box">
                         <div class="game-image">
-                            <img src="https://via.placeholder.com/300x200?text=Featured+Game" alt="Featured Game Thumbnail">
+                            <img src="https://via.placeholder.com/300x200/2ecc71/ffffff?text=Epic+Game+Thumbnail" alt="Featured Game">
                         </div>
                         <div class="game-details">
-                            <h3>Mega Obby Madness</h3>
-                            <p>Jump, climb, and race your way through the most challenging obby ever created! Can you reach the end?</p>
+                            <div>
+                                <h3>The Ultimate Obby</h3>
+                                <p>Test your skills in the most challenging obstacle course ever created. Hundreds of stages await! Can you reach the end?</p>
+                            </div>
                             <button class="play-button-small">Play Game</button>
                         </div>
                     </div>
@@ -1129,93 +1680,106 @@
         <div id="gamesTab" class="tab">
             <div class="games-container">
                 <div class="games-sidebar">
-                    <h3>Game Categories</h3>
-                    <ul class="category-list">
-                        <li><a href="#" data-category="All">All Games</a></li>
-                        <li><a href="#" data-category="Adventure">Adventure</a></li>
-                        <li><a href="#" data-category="Tycoon">Tycoon</a></li>
-                        <li><a href="#" data-category="Simulator">Simulator</a></li>
-                        <li><a href="#" data-category="Obby">Obby</a></li>
-                        <li><a href="#" data-category="Roleplaying">Roleplaying</a></li>
-                    </ul>
-                    <ul class="category-list" style="margin-top: 20px;">
-                        <li><a href="#" data-category="Popular">Popular</a></li>
-                        <li><a href="#" data-category="Top Rated">Top Rated</a></li>
-                        <li><a href="#" data-category="Recommended">Recommended</a></li>
-                    </ul>
-                    <button id="uploadGameButton" style="background-color: #00aaff; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; margin-top: 20px; width: 100%; font-weight: bold;">Upload Game</button>
-                    <input type="file" id="gameFileUpload" accept=".zip,.rblx" style="display: none;">
+                    <h3>Filter Games</h3>
+                    <div class="category-list">
+                        <ul>
+                            <li><a href="#">All</a></li>
+                            <li><a href="#">Popular</a></li>
+                            <li><a href="#">Top Rated</a></li>
+                            <li><a href="#">Adventure</a></li>
+                            <li><a href="#">Tycoon</a></li>
+                            <li><a href="#">Obby</a></li>
+                            <li><a href="#">Roleplay</a></li>
+                        </ul>
+                    </div>
                 </div>
                 <div class="games-content">
-                    <div class="games-tabs">
-                        <button id="popularGamesTabButton" class="active-game-tab">Popular</button>
-                        <button id="topRatedGamesTabButton">Top Rated</button>
-                        <button id="friendsPlayingTabButton">Friends Playing</button>
-                        <button id="myGamesTabButton">My Games</button>
-                    </div>
-                    <div class="games-search">
-                        <input type="text" id="gameSearchInput" placeholder="Search games...">
-                        <button id="searchGamesButton">Search</button>
+                    <div class="games-header">
+                        <h2>Featured Games</h2>
+                        <div class="games-search">
+                            <input type="text" placeholder="Search games...">
+                            <button>Search</button>
+                        </div>
                     </div>
                     <div class="game-grid" id="gameGrid">
-                    </div>
+                        </div>
                     <div class="game-pagination">
-                        <button id="prevPageButton">Previous</button>
-                        <span id="pageInfo">Page 1 of 1</span>
-                        <button id="nextPageButton">Next</button>
+                        <button id="prevPage">Previous</button>
+                        <span id="pageInfo">Page 1 of 5</span>
+                        <button id="nextPage">Next</button>
                     </div>
                 </div>
             </div>
         </div>
 
         <div id="avatarTab" class="tab">
-            <div class="avatar-editor-container">
-                <h2>Avatar Editor (3D)</h2>
-                <canvas id="avatar3DCanvas" width="600" height="400" style="border: 2px solid #ccc; background-color: #f0f0f0;"></canvas>
-                
-                <div id="colorControls" style="display: flex; gap: 15px; margin-top: 15px; margin-bottom: 20px; flex-wrap: wrap; justify-content: center;">
-                    <label>Head <input type="color" id="Head" value="#ffccaa"></label>
-                    <label>Torso <input type="color" id="Torso" value="#00aaff"></label>
-                    <label>Left Arm <input type="color" id="LeftArm" value="#ff5555"></label>
-                    <label>Right Arm <input type="color" id="RightArm" value="#ff5555"></label>
-                    <label>Left Leg <input type="color" id="LeftLeg" value="#0055aa"></label>
-                    <label>Right Leg <input type="color" id="RightLeg" value="#0055aa"></label>
-                </div>
+            <div class="character-editor-container">
+                <h2>3D Avatar Editor</h2>
+                <div class="editor-content">
+                    <div style="flex-grow: 1;">
+                        <canvas id="avatarCanvas" width="400" height="400"></canvas>
+                        <button class="avatar-action-button" onclick="saveAvatar()">Save Avatar</button>
+                        <button class="avatar-action-button" onclick="resetAvatar()">Reset</button>
+                    </div>
 
-                <div class="avatar-tools">
-                    <div class="hat-button-container" data-type="none">
-                        <canvas class="hat-preview-canvas" width="90" height="90"></canvas>
-                        <span>No Hat</span>
-                    </div>
-                    <div class="hat-button-container" data-id="red_top_hat" data-color="red" data-price="50">
-                        <canvas class="hat-preview-canvas" width="90" height="90"></canvas>
-                        <span>Red Top Hat</span>
-                    </div>
-                    <div class="hat-button-container" data-id="blue_cap" data-color="blue" data-price="75">
-                        <canvas class="hat-preview-canvas" width="90" height="90"></canvas>
-                        <span>Blue Cap</span>
-                    </div>
-                    <div class="hat-button-container" data-id="green_beanie" data-color="green" data-price="60">
-                        <canvas class="hat-preview-canvas" width="90" height="90"></canvas>
-                        <span>Green Beanie</span>
-                    </div>
-                    <div class="hat-button-container" data-id="yellow_fedora" data-color="yellow" data-price="90">
-                        <canvas class="hat-preview-canvas" width="90" height="90"></canvas>
-                        <span>Yellow Fedora</span>
-                    </div>
-                    <div class="hat-button-container" data-id="purple_party_hat" data-color="purple" data-price="40">
-                        <canvas class="hat-preview-canvas" width="90" height="90"></canvas>
-                        <span>Party Hat</span>
+                    <div class="editor-panel">
+                        <div id="colorEditor">
+                            <h4>Body Color</h4>
+                            <div class="color-palette">
+                                <div class="color-swatch" style="background-color: #3333ff;" onclick="changeBodyColor('#3333ff')"></div>
+                                <div class="color-swatch" style="background-color: #ff3333;" onclick="changeBodyColor('#ff3333')"></div>
+                                <div class="color-swatch" style="background-color: #33ff33;" onclick="changeBodyColor('#33ff33')"></div>
+                                <div class="color-swatch" style="background-color: #ffff33;" onclick="changeBodyColor('#ffff33')"></div>
+                                <div class="color-swatch" style="background-color: #ffffff;" onclick="changeBodyColor('#ffffff')"></div>
+                            </div>
+                        </div>
+
+                        <div id="accessoriesPanel">
+                            <h4>Accessories (Owned)</h4>
+                            <div class="character-tools" id="inventoryAccessories">
+                                <div class="character-button-container owned" onclick="applyAccessory('Hat_Cap')">
+                                    <img src="https://via.placeholder.com/80x80/0077cc/ffffff?text=Hat" alt="Hat" style="width: 80px; height: 80px; object-fit: contain;">
+                                    <span>Blue Cap</span>
+                                </div>
+                                <div class="character-button-container owned" onclick="applyAccessory('Shirt_Tee')">
+                                    <img src="https://via.placeholder.com/80x80/00ff00/ffffff?text=Shirt" alt="Shirt" style="width: 80px; height: 80px; object-fit: contain;">
+                                    <span>Green Tee</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <button id="saveAvatarButton" class="avatar-action-button">Save Avatar</button>
             </div>
         </div>
 
         <div id="catalogTab" class="tab">
             <div class="catalog-container">
-                <h2>Catalog</h2>
-                <div class="catalog-grid" id="catalogGrid">
+                <div class="catalog-header">
+                    <h2>Avatar Catalog</h2>
+                    <div class="games-search">
+                        <input type="text" placeholder="Search items...">
+                        <button>Search</button>
+                    </div>
+                </div>
+
+                <div class="catalog-content-wrapper">
+                    <div class="catalog-sidebar games-sidebar">
+                        <h3>Item Categories</h3>
+                        <div class="category-list">
+                            <ul>
+                                <li><a href="#" onclick="renderCatalogPage('All'); return false;">All Items</a></li>
+                                <li><a href="#" onclick="renderCatalogPage('Hats'); return false;">Hats</a></li>
+                                <li><a href="#" onclick="renderCatalogPage('Shirts'); return false;">Shirts</a></li>
+                                <li><a href="#" onclick="renderCatalogPage('Pants'); return false;">Pants</a></li>
+                                <li><a href="#" onclick="renderCatalogPage('Faces'); return false;">Faces</a></li>
+                                <li><a href="#" onclick="renderCatalogPage('Bundles'); return false;">Bundles</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="catalog-main">
+                        <div class="catalog-grid" id="catalogGrid">
+                            </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1223,14 +1787,16 @@
         <div id="profileTab" class="tab">
             <div class="profile-container">
                 <div class="profile-section">
-                    <h3><span id="profileUsernameDisplay"></span>'s Profile</h3>
-                    <canvas id="profileAvatarPreview" class="profile-avatar-preview" width="200" height="200"></canvas>
-                    <p>Robux Balance: <span id="profileRobuxBalance"></span></p>
+                    <h3>My Profile</h3>
+                    <img src="https://via.placeholder.com/200" alt="Avatar Preview" class="profile-avatar-preview">
+                    <p>Username: <span id="profileUsername">Guest</span></p>
+                    <p>Join Date: <span id="profileJoinDate">N/A</span></p>
+                    <p>Robux Balance: <span class="robux-display"><span class="robux-icon">R</span><span id="profileRobuxBalance">0</span></span></p>
                 </div>
                 <div class="profile-section">
-                    <h3>My Inventory</h3>
-                    <div class="profile-inventory-grid" id="profileInventoryGrid">
-                    </div>
+                    <h3>My Inventory (Sample)</h3>
+                    <div class="profile-inventory-grid" id="profileInventory">
+                        </div>
                 </div>
             </div>
         </div>
@@ -1239,15 +1805,28 @@
             <div class="friends-container">
                 <h2>Friends</h2>
                 <div class="friends-section">
-                    <h3>My Friends (<span id="friendsCount">0</span>)</h3>
-                    <ul class="friend-list" id="myFriendList">
+                    <h3>Friend Requests</h3>
+                    <ul class="friend-list" id="friendRequestsList">
+                        <li>
+                            <span>FriendBot_3000</span>
+                            <div>
+                                <button style="background: #5cb85c;">Accept</button>
+                                <button>Decline</button>
+                            </div>
+                        </li>
                     </ul>
                 </div>
                 <div class="friends-section">
-                    <h3>Add Friend</h3>
+                    <h3>My Friends</h3>
+                    <ul class="friend-list" id="myFriendsList">
+                        <li>
+                            <span>DevUser123</span>
+                            <button>Remove</button>
+                        </li>
+                    </ul>
                     <div class="add-friend-form">
-                        <input type="text" id="addFriendInput" placeholder="Enter username">
-                        <button id="addFriendButton">Add Friend</button>
+                        <input type="text" id="addFriendUsername" placeholder="Enter username to add">
+                        <button onclick="addFriend()">Send Request</button>
                     </div>
                 </div>
             </div>
@@ -1257,771 +1836,646 @@
             <div class="chat-container">
                 <h2>Chat</h2>
                 <div class="chat-messages" id="chatMessages">
+                    <div class="chat-message received"><span class="username">AdminBot:</span> Welcome to the chat!</div>
                 </div>
-                <form class="chat-input-form" id="chatInputForm">
-                    <input type="text" id="chatMessageInput" placeholder="Type a message..." autocomplete="off">
-                    <button type="submit">Send</button>
-                </form>
+                <div class="chat-input-form">
+                    <input type="text" id="chatInput" placeholder="Type your message...">
+                    <button onclick="sendMessage()">Send</button>
+                </div>
             </div>
         </div>
+
+        <div id="forumTab" class="tab">
+            <div class="forum-container">
+                <div class="forum-header">
+                    <h2>Community Forum</h2>
+                    <button onclick="showNewTopicForm()">New Topic</button>
+                </div>
+                <div class="new-topic-form" id="newTopicForm">
+                    <h3>Create New Topic</h3>
+                    <input type="text" id="topicTitle" placeholder="Topic Title" required>
+                    <textarea id="topicContent" placeholder="Your post content..." required></textarea>
+                    <button onclick="submitNewTopic()">Post Topic</button>
+                </div>
+                <ul class="forum-topic-list" id="forumTopicList">
+                    </ul>
+            </div>
+        </div>
+
+        <div id="notificationsTab" class="tab">
+            <div class="notifications-container">
+                <div class="notifications-header">
+                    <h2>Notifications</h2>
+                    <button onclick="markAllAsRead()">Mark All As Read</button>
+                </div>
+                <ul class="notification-list" id="notificationList">
+                    </ul>
+            </div>
+        </div>
+
+        <div id="settingsTab" class="tab">
+            <div class="settings-container">
+                <h2>Settings</h2>
+                <div class="settings-section">
+                    <h3>Account Settings</h3>
+                    <label for="newUsername">Change Username:</label>
+                    <input type="text" id="newUsername" placeholder="New Username">
+                    <button onclick="updateAccountInfo('username')">Update Username</button>
+                    <label for="newPassword">Change Password:</label>
+                    <input type="password" id="newPassword" placeholder="New Password">
+                    <button onclick="updateAccountInfo('password')">Update Password</button>
+                </div>
+                <div class="settings-section">
+                    <h3>Privacy Settings</h3>
+                    <label for="whoCanChat">Who can chat with me:</label>
+                    <select id="whoCanChat">
+                        <option value="all">All Users</option>
+                        <option value="friends">Friends Only</option>
+                        <option value="none">No One</option>
+                    </select>
+                    <button onclick="saveSettings()">Save Privacy</button>
+                </div>
+                <div class="settings-section">
+                    <h3>Danger Zone</h3>
+                    <button class="delete-account-button" onclick="deleteAccount()">Delete Account</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="adminTab" class="tab">
+            <div class="admin-panel-container">
+                <h2>Admin Panel</h2>
+                <div class="admin-section">
+                    <h3>User Management</h3>
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Username</th>
+                                <th>Role</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="userTableBody">
+                            </tbody>
+                    </table>
+                </div>
+                <div class="admin-section">
+                    <h3>Game Management</h3>
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Title</th>
+                                <th>Players</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="gameTableBody">
+                            </tbody>
+                    </table>
+                </div>
+                <div class="admin-section">
+                    <h3>Forum Moderation</h3>
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Title</th>
+                                <th>Author</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="forumModerationTableBody">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
     </main>
 
     <footer>
-        <p>&copy; 2025 Roblox Clone. All rights reserved.</p>
-        <p>
-            <a href="#">About Us</a> | <a href="#">Contact</a> | <a href="#">Privacy Policy</a> | <a href="#">Terms of Service</a>
-        </p>
+        <p>&copy; 2025 Robringer Clone. <a href="#">About</a> | <a href="#">Terms</a> | <a href="#">Privacy</a></p>
     </footer>
 
-    <script type="module">
-        // --- 3D Avatar Model Loader (Three.js) ---
-        import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
-        import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js';
-        import { OBJLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/OBJLoader.js';
+    <div class="modal-overlay" id="profileModalOverlay">
+        <div class="profile-modal">
+            <button class="close-button" onclick="closeProfileModal()">&times;</button>
+            <h3 id="modalUsername">Player Name</h3>
+            <img src="https://via.placeholder.com/120" alt="Avatar" id="modalUserAvatar">
+            <p>Status: <span id="modalUserStatus">Offline</span></p>
+            <p>Robux: <span class="robux-display" style="font-size: 1em;"><span class="robux-icon">R</span><span id="modalUserRobux">0</span></span></p>
+            <div class="modal-buttons">
+                <button onclick="sendFriendRequestFromModal()">Add Friend</button>
+                <button onclick="sendMessageToUserFromModal()">Message</button>
+                <button class="close" onclick="closeProfileModal()">Close</button>
+            </div>
+        </div>
+    </div>
 
-        let scene, camera, renderer, controls, avatarObject;
-        const parts = {}; // Map of model part names to THREE.Mesh objects
-        let isInitialized = false;
-
-        // Exposed function to be called by the main script when the Avatar tab is opened
-        window.init3DAvatarEditor = function() {
-            if (isInitialized) {
-                // If already initialized, just ensure the renderer is visible and running
-                renderer.setAnimationLoop(animate);
-                return;
-            }
-
-            const canvas = document.getElementById('avatar3DCanvas');
-            const width = canvas.width;
-            const height = canvas.height;
-
-            // 1. Scene Setup
-            scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x1a1a1a); // Slightly lighter dark background
-
-            // 2. Camera Setup
-            camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
-            // **FIX 1: Move the camera closer and slightly higher to guarantee view**
-            camera.position.set(1.5, 1.5, 3); 
-
-            // 3. Renderer Setup
-            renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
-            renderer.setSize(width, height);
-            renderer.setPixelRatio(window.devicePixelRatio);
-
-            // 4. Lighting
-            // **FIX 2: Increase light intensity for better visibility**
-            const ambientLight = new THREE.AmbientLight(0xffffff, 1.2); // Stronger ambient light
-            scene.add(ambientLight);
-            
-            const directionalLight = new THREE.DirectionalLight(0xffffff, 1.5); // Stronger directional light
-            directionalLight.position.set(5, 10, 7.5);
-            directionalLight.castShadow = true; // Enable shadows if performance allows
-            scene.add(directionalLight);
-            
-            const fillLight = new THREE.DirectionalLight(0xaaaaaa, 0.5); // Secondary light for fill
-            fillLight.position.set(-5, 5, -5);
-            scene.add(fillLight);
+    <div class="forum-detail-modal-overlay" id="forumDetailModalOverlay">
+        <div class="forum-detail-modal">
+            <button class="close-button" onclick="closeTopicDetailModal()">&times;</button>
+            <h3 id="topicDetailTitle">Topic Title</h3>
+            <div class="topic-info">Posted by <span id="topicDetailAuthor" style="font-weight: bold;"></span> on <span id="topicDetailTimestamp"></span></div>
+            <div class="topic-content" id="topicDetailContent"></div>
+            <div class="replies-section">
+                <h4>Replies (<span id="replyCount">0</span>)</h4>
+                <div id="topicRepliesList">
+                    </div>
+                <div class="reply-form">
+                    <textarea id="replyContent" placeholder="Write a reply..."></textarea>
+                    <button id="submitReplyButton">Post Reply</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
 
-            // 5. Controls
-            controls = new OrbitControls(camera, renderer.domElement);
-            controls.enableDamping = true;
-            controls.dampingFactor = 0.05;
-            controls.screenSpacePanning = false;
-            controls.minDistance = 1.5; // Prevent camera from entering model
-            controls.maxDistance = 10;
-            controls.target.set(0, 1.0, 0); // **FIX 3: Center the target precisely around the model's center**
+    <div id="messageBox"></div>
 
-            // 6. Load Model
-            loadModel();
 
-            // 7. Event Listeners for Color Controls
-            setupColorListeners();
-
-            // 8. Start Animation
-            renderer.setAnimationLoop(animate);
-
-            // 9. Resize Handling
-            window.addEventListener('resize', onWindowResize);
-
-            isInitialized = true;
-        }
-
-        function loadModel() {
-            const loader = new OBJLoader();
-            loader.load(
-                'model.obj',
-                function (obj) {
-                    avatarObject = obj;
-                    
-                    avatarObject.traverse(child => {
-                        if (child.isMesh) {
-                            const name = child.name.trim();
-                            
-                            // **FIX 4: Ensure material is bright, even if custom color is missing**
-                            const initialColor = document.getElementById(name) ? document.getElementById(name).value : '#aaaaaa';
-                            
-                            const material = new THREE.MeshStandardMaterial({
-                                color: new THREE.Color(initialColor),
-                                metalness: 0.1,
-                                roughness: 0.5 // Slightly less roughness for a little shine
-                            });
-                            child.material = material;
-
-                            // Store only the main body parts for color changes
-                            if (["Head", "Torso", "LeftArm", "RightArm", "LeftLeg", "RightLeg"].includes(name)) {
-                                parts[name] = child;
-                            }
-                        }
-                    });
-
-                    // **FIX 5: Ensure scale is appropriate**
-                    avatarObject.scale.set(1.0, 1.0, 1.0); 
-
-                    // Move the model to stand on the ground (assuming its base is at y=0)
-                    avatarObject.position.y = 0;
-
-                    scene.add(avatarObject);
-                },
-                xhr => {
-                    console.log((xhr.loaded / xhr.total * 100).toFixed(2) + '% loaded');
-                },
-                err => {
-                    // This error is crucial if the model file is not found
-                    console.error('CRITICAL: Error loading OBJ. Did you run the Node.js server and is "model.obj" in the same folder?', err);
-                }
-            );
-        }
-
-        function setupColorListeners() {
-            // NOTE: Using a class selector here as the color inputs were moved into a new div
-            const colorInputs = document.querySelectorAll('#colorControls input[type=color]'); 
-            colorInputs.forEach(input => {
-                input.addEventListener('input', () => {
-                    const partName = input.id;
-                    const newColor = input.value;
-                    if (parts[partName]) {
-                        parts[partName].material.color.set(newColor);
-                    }
-                });
-            });
-        }
-
-        function onWindowResize() {
-            const canvas = document.getElementById('avatar3DCanvas');
-            const width = canvas.width;
-            const height = canvas.height;
-
-            camera.aspect = width / height;
-            camera.updateProjectionMatrix();
-            // The canvas size is fixed, so no need to call renderer.setSize here unless it was dynamic.
-        }
-
-        function animate() {
-            controls.update();
-            renderer.render(scene, camera);
-        }
-    </script>
-    
     <script>
-        // --- Core Application Data ---
-        let robuxBalance = 0;
-        let currentUser = null;
-        let userInventory = {};
-        let friendsList = [];
-        let chatMessages = [];
-        let savedAvatar = {
-            Head: '#ffccaa', Torso: '#00aaff', LeftArm: '#ff5555', RightArm: '#ff5555', LeftLeg: '#0055aa', RightLeg: '#0055aa',
-            hat: 'none'
+        // --- Data Mocking / State Management ---
+        let currentUser = {
+            id: 1,
+            username: "RobloxDev",
+            robux: 500,
+            isAdmin: true,
+            inventory: [
+                { id: 'Hat_Cap', name: 'Blue Cap', type: 'Hat', price: 100 },
+                { id: 'Shirt_Tee', name: 'Green Tee', type: 'Shirt', price: 150 }
+            ],
+            avatar: {
+                headColor: "#ffff00", // Yellow
+                bodyColor: "#3333ff", // Blue
+                leftArmColor: "#3333ff",
+                rightArmColor: "#3333ff",
+                leftLegColor: "#ff3333", // Red
+                rightLegColor: "#ff3333",
+                accessories: ['Hat_Cap', 'Shirt_Tee']
+            }
         };
 
-        const defaultCatalog = [
-            { id: 'red_top_hat', name: 'Red Top Hat', price: 50, color: 'red', type: 'hat' },
-            { id: 'blue_cap', name: 'Blue Cap', price: 75, color: 'blue', type: 'hat' },
-            { id: 'green_beanie', name: 'Green Beanie', price: 60, color: 'green', type: 'hat' },
-            { id: 'yellow_fedora', name: 'Yellow Fedora', price: 90, color: 'yellow', type: 'hat' },
-            { id: 'purple_party_hat', name: 'Party Hat', price: 40, color: 'purple', type: 'hat' },
-            { id: 'blox_cola', name: 'Blox Cola', price: 10, type: 'gear' },
-            { id: 'super_sword', name: 'Super Sword', price: 150, type: 'tool' },
-            { id: 'cool_shirt', name: 'Cool Shirt', price: 25, type: 'clothing' }
+        const mockCatalog = [
+            { id: 'Hat_Wizard', name: 'Wizard Hat', category: 'Hats', price: 500, img: 'https://via.placeholder.com/80x80/9b59b6/ffffff?text=Wizard+Hat' },
+            { id: 'Shirt_Hoodie', name: 'Black Hoodie', category: 'Shirts', price: 350, img: 'https://via.placeholder.com/80x80/34495e/ffffff?text=Hoodie' },
+            { id: 'Pants_Jeans', name: 'Denim Jeans', category: 'Pants', price: 200, img: 'https://via.placeholder.com/80x80/2c3e50/ffffff?text=Jeans' },
+            { id: 'Face_Grin', name: 'Wicked Grin', category: 'Faces', price: 100, img: 'https://via.placeholder.com/80x80/f1c40f/333333?text=Face' },
+            { id: 'Bundles_Knight', name: 'Knight Bundle', category: 'Bundles', price: 1500, img: 'https://via.placeholder.com/80x80/e74c3c/ffffff?text=Knight' },
+            { id: 'Hat_Crown', name: 'Golden Crown', category: 'Hats', price: 1000, img: 'https://via.placeholder.com/80x80/ffd700/333333?text=Crown' },
         ];
 
-        const defaultGames = [
-            { id: 1, title: 'Build a Base', players: '2.5K', image: 'https://via.placeholder.com/180x120?text=Build+Base', category: 'Tycoon' },
-            { id: 2, title: 'Mega Obby', players: '5.1K', image: 'https://via.placeholder.com/180x120?text=Mega+Obby', category: 'Obby' },
-            { id: 3, title: 'Roleplay High', players: '1.2K', image: 'https://via.placeholder.com/180x120?text=Roleplay+High', category: 'Roleplaying' },
-            { id: 4, title: 'Simulator X', players: '7.8K', image: 'https://via.placeholder.com/180x120?text=Simulator+X', category: 'Simulator' },
-            { id: 5, title: 'Adventure Time', players: '3.3K', image: 'https://via.placeholder.com/180x120?text=Adventure+Time', category: 'Adventure' }
-        ];
+        // --- Three.js 3D Avatar Variables ---
+        let scene, camera, renderer, characterGroup;
 
         // --- Utility Functions ---
-        function showMessage(message, isSuccess = true) {
-            const messageBox = document.getElementById('messageBox');
-            messageBox.textContent = message;
-            messageBox.className = isSuccess ? '' : 'error'; // Clear previous classes, add 'error' if needed
-            messageBox.style.opacity = 1;
-            messageBox.style.display = 'block';
 
-            setTimeout(() => {
-                messageBox.style.opacity = 0;
-                setTimeout(() => {
-                    messageBox.style.display = 'none';
-                }, 300);
-            }, 3000);
-        }
-
-        // --- Local Storage Management ---
-        function loadCurrentUser() {
-            const userJson = localStorage.getItem('currentUser');
-            if (userJson) {
-                currentUser = JSON.parse(userJson);
-                document.getElementById('loggedInUsername').textContent = currentUser.username;
-                document.getElementById('loggedInSection').style.display = 'block';
-                document.getElementById('loggedOutSection').style.display = 'none';
-            } else {
-                document.getElementById('loggedInSection').style.display = 'none';
-                document.getElementById('loggedOutSection').style.display = 'block';
-            }
-        }
         function saveCurrentUser() {
             localStorage.setItem('currentUser', JSON.stringify(currentUser));
         }
 
+        function loadCurrentUser() {
+            const savedUser = localStorage.getItem('currentUser');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+            }
+        }
+
         function loadRobuxBalance() {
-            const storedRobux = localStorage.getItem('robuxBalance');
-            if (storedRobux) {
-                robuxBalance = parseInt(storedRobux);
-            } else if (currentUser) {
-                // Give logged-in users a starting balance if none is stored
-                robuxBalance = 100;
-            }
-            updateRobuxDisplay();
-        }
-        function saveRobuxBalance() {
-            localStorage.setItem('robuxBalance', robuxBalance.toString());
-        }
-        function updateRobuxDisplay() {
-            document.getElementById('robuxBalance').textContent = robuxBalance;
-            if (document.getElementById('displayRobuxBalance')) {
-                 document.getElementById('displayRobuxBalance').textContent = robuxBalance;
-            }
-            if (document.getElementById('profileRobuxBalance')) {
-                 document.getElementById('profileRobuxBalance').textContent = robuxBalance;
+            document.getElementById('robuxBalance').textContent = currentUser.robux;
+            const profileRobuxElement = document.getElementById('profileRobuxBalance');
+            if (profileRobuxElement) {
+                profileRobuxElement.textContent = currentUser.robux;
             }
         }
 
-        function loadInventory() {
-            const inventoryJson = localStorage.getItem('userInventory');
-            if (inventoryJson) {
-                userInventory = JSON.parse(inventoryJson);
-            }
-        }
-        function saveInventory() {
-            localStorage.setItem('userInventory', JSON.stringify(userInventory));
+        function addRobux(amount) {
+            currentUser.robux += amount;
+            saveCurrentUser();
+            loadRobuxBalance();
+            showMessage(`Added ${amount} R to your balance!`);
         }
 
-        function loadFriendsList() {
-            const friendsJson = localStorage.getItem('friendsList');
-            if (friendsJson) {
-                friendsList = JSON.parse(friendsJson);
-            }
-        }
-        function saveFriendsList() {
-            localStorage.setItem('friendsList', JSON.stringify(friendsList));
-        }
-
-        function loadChatMessages() {
-             const messagesJson = localStorage.getItem('chatMessages');
-             if (messagesJson) {
-                 chatMessages = JSON.parse(messagesJson);
-             }
-         }
-         function saveChatMessages() {
-             localStorage.setItem('chatMessages', JSON.stringify(chatMessages));
-         }
-
-        function loadSavedAvatar() {
-            const avatarJson = localStorage.getItem('savedAvatar');
-            if (avatarJson) {
-                savedAvatar = JSON.parse(avatarJson);
-                // Set the color pickers to the saved colors
-                ['Head', 'Torso', 'LeftArm', 'RightArm', 'LeftLeg', 'RightLeg'].forEach(part => {
-                    const input = document.getElementById(part);
-                    if (input) input.value = savedAvatar[part];
-                });
-            }
-        }
-        function saveAvatar() {
-            // Read colors from the input fields
-            ['Head', 'Torso', 'LeftArm', 'RightArm', 'LeftLeg', 'RightLeg'].forEach(part => {
-                const input = document.getElementById(part);
-                if (input) savedAvatar[part] = input.value;
-            });
-            
-            // Get current selected hat
-            const currentHatButton = document.querySelector('.hat-button-container.selected');
-            if (currentHatButton) {
-                savedAvatar.hat = currentHatButton.dataset.id || currentHatButton.dataset.type;
-            }
-
-            localStorage.setItem('savedAvatar', JSON.stringify(savedAvatar));
-            showMessage('Avatar saved successfully!');
-            // Re-render the profile preview and disable/enable hats on the Avatar tab
-            loadProfile();
-            renderHatButtons();
+        function showMessage(message, isSuccess = true) {
+            const box = document.getElementById('messageBox');
+            box.textContent = message;
+            box.className = isSuccess ? '' : 'error';
+            box.style.display = 'block';
+            box.style.opacity = 1;
+            setTimeout(() => {
+                box.style.opacity = 0;
+                setTimeout(() => {
+                    box.style.display = 'none';
+                }, 300);
+            }, 3000);
         }
 
-        // --- Navigation Logic ---
-        const tabs = {
-            home: document.getElementById('homeTab'),
-            games: document.getElementById('gamesTab'),
-            avatar: document.getElementById('avatarTab'),
-            catalog: document.getElementById('catalogTab'),
-            profile: document.getElementById('profileTab'),
-            friends: document.getElementById('friendsTab'),
-            chat: document.getElementById('chatTab')
-        };
-        const navLinks = document.querySelectorAll('nav a');
-
-        function switchTab(tabId) {
-            Object.values(tabs).forEach(tab => {
+        function updateTabContent(tabId) {
+            document.querySelectorAll('.tab').forEach(tab => {
                 tab.classList.remove('active');
             });
-            tabs[tabId].classList.add('active');
+            document.getElementById(tabId).classList.add('active');
 
-            navLinks.forEach(link => {
-                link.style.borderBottom = '2px solid transparent';
-                if (link.id === `${tabId}NavLink`) {
-                    link.style.borderBottom = '2px solid white';
-                }
-            });
-
-            // Special Initialization for 3D Editor
-            if (tabId === 'avatar' && window.init3DAvatarEditor) {
-                window.init3DAvatarEditor(); // Calls the function in the module script
+            // Conditional loading based on tab
+            if (tabId === 'avatarTab') {
+                initThreeJSCharacterEditor();
+                renderCharacterEditor();
+            } else if (tabId === 'catalogTab') {
+                renderCatalogPage('All');
+            } else if (tabId === 'profileTab') {
+                loadProfile();
             }
+            // Add other tab-specific rendering calls here
         }
 
-        navLinks.forEach(link => {
-            link.addEventListener('click', function(e) {
-                e.preventDefault();
-                const tabId = this.id.replace('NavLink', '');
-                switchTab(tabId);
-            });
-        });
+        // --- 3D Avatar Editor Functions (NEW) ---
 
-        // --- User/Login Logic ---
-        document.getElementById('loginButton').addEventListener('click', function() {
-            const username = document.getElementById('username').value.trim();
-            const password = document.getElementById('password').value.trim();
-
-            if (username && password) {
-                // Simple pseudo-login: any input works as long as it's not empty
-                currentUser = { username: username, isLoggedIn: true };
-                saveCurrentUser();
-                loadRobuxBalance(); // Reloads or initializes Robux
-                updateRobuxDisplay();
-                loadInventory();
-                loadFriendsList();
-
-                // Re-render components dependent on login status
-                renderCatalog();
-                renderFriends();
-
-                document.getElementById('loggedInUsername').textContent = username;
-                document.getElementById('loggedInSection').style.display = 'block';
-                document.getElementById('loggedOutSection').style.display = 'none';
-                showMessage(`Welcome back, ${username}!`);
-            } else {
-                showMessage('Please enter both username and password.', false);
-            }
-        });
-
-        document.getElementById('logoutButton').addEventListener('click', function() {
-            currentUser = null;
-            localStorage.removeItem('currentUser');
-            document.getElementById('loggedInSection').style.display = 'none';
-            document.getElementById('loggedOutSection').style.display = 'block';
-            showMessage('You have been logged out.');
-            // Re-render components dependent on login status
-            renderCatalog();
-            renderFriends();
-        });
-
-        document.getElementById('getRobuxButton').addEventListener('click', function() {
-            if (!currentUser) {
-                showMessage('Please log in to get Robux!', false);
-                return;
-            }
-            const earned = 50;
-            robuxBalance += earned;
-            saveRobuxBalance();
-            updateRobuxDisplay();
-            showMessage(`You earned ${earned} Robux! Current balance: ${robuxBalance}`);
-        });
-
-        // --- Avatar Editor Logic ---
-        function renderHatButtons() {
-            const hatButtons = document.querySelectorAll('.hat-button-container');
-            hatButtons.forEach(button => {
-                const hatId = button.dataset.id || button.dataset.type;
-                const hatPrice = parseInt(button.dataset.price);
-
-                // Check for ownership/selection
-                const isOwned = hatId === 'none' || userInventory[hatId];
-                const isSelected = savedAvatar.hat === hatId;
-
-                button.classList.remove('owned-false', 'selected');
-
-                if (!isOwned) {
-                    button.classList.add('owned-false');
-                    // Display price for unowned items
-                    button.querySelector('span').textContent = `${button.dataset.id ? button.dataset.id.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') : 'No Hat'} (${hatPrice} R)`;
-                } else {
-                    // Display name for owned items
-                    button.querySelector('span').textContent = button.dataset.id ? button.dataset.id.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') : 'No Hat';
-                    
-                    if (isSelected) {
-                        button.classList.add('selected');
-                        button.style.border = '3px solid gold';
-                    } else {
-                        button.style.border = 'none';
-                    }
-                }
-
-                // Event Listener for equipping (only if owned)
-                if (isOwned) {
-                    button.addEventListener('click', function() {
-                        // Clear existing selection border/class
-                        document.querySelectorAll('.hat-button-container').forEach(b => {
-                            b.classList.remove('selected');
-                            b.style.border = 'none';
-                        });
-
-                        // Set new selection
-                        savedAvatar.hat = hatId;
-                        button.classList.add('selected');
-                        button.style.border = '3px solid gold';
-
-                        // Logic to apply hat to 3D model would go here
-                        showMessage(`Equipped: ${button.querySelector('span').textContent.split('(')[0].trim()}`);
-                    });
-                }
-            });
-        }
-
-        document.getElementById('saveAvatarButton').addEventListener('click', saveAvatar);
-
-        function initAvatarEditor() {
-            loadSavedAvatar();
-            loadInventory(); // Ensure inventory is loaded to check hat ownership
-            renderHatButtons();
-        }
-
-        // --- Catalog Logic ---
-        function renderCatalog() {
-            const catalogGrid = document.getElementById('catalogGrid');
-            catalogGrid.innerHTML = ''; // Clear previous items
-
-            defaultCatalog.forEach(item => {
-                const isOwned = userInventory[item.id];
-                const card = document.createElement('div');
-                card.className = 'catalog-item-card';
-
-                card.innerHTML = `
-                    <img src="https://via.placeholder.com/150x120?text=${item.name.replace(/\s/g, '+')}" alt="${item.name}">
-                    <div class="item-details">
-                        <div class="item-name">${item.name}</div>
-                        ${isOwned ? '<div class="owned-tag">Owned</div>' : `
-                            <div class="item-price">
-                                <span class="robux-icon">R</span>
-                                <span>${item.price}</span>
-                            </div>
-                        `}
-                        <button class="buy-button ${isOwned ? 'disabled' : ''}" data-id="${item.id}" ${isOwned ? 'disabled' : ''}>
-                            ${isOwned ? 'Equip' : 'Buy Now'}
-                        </button>
-                    </div>
-                `;
-                catalogGrid.appendChild(card);
-            });
-
-            // Add Buy Button Listeners
-            document.querySelectorAll('.catalog-item-card .buy-button:not(.disabled)').forEach(button => {
-                button.addEventListener('click', function() {
-                    if (!currentUser) {
-                        showMessage('Please log in to purchase items!', false);
-                        return;
-                    }
-                    const itemId = this.dataset.id;
-                    const item = defaultCatalog.find(i => i.id === itemId);
-
-                    if (robuxBalance >= item.price) {
-                        robuxBalance -= item.price;
-                        userInventory[itemId] = true;
-                        saveRobuxBalance();
-                        saveInventory();
-                        updateRobuxDisplay();
-                        showMessage(`Purchased ${item.name} for ${item.price} Robux!`);
-                        renderCatalog(); // Re-render to update ownership status
-                        renderHatButtons(); // Re-render avatar hats for new ownership
-                    } else {
-                        showMessage('Not enough Robux!', false);
-                    }
-                });
-            });
-        }
-
-        // --- Profile Logic ---
-        function renderInventoryGrid() {
-            const grid = document.getElementById('profileInventoryGrid');
-            grid.innerHTML = '';
-            
-            // Get owned items, excluding the colors which are handled by the avatar save
-            const ownedItems = defaultCatalog.filter(item => userInventory[item.id]);
-
-            if (ownedItems.length === 0) {
-                grid.innerHTML = '<p style="font-size: 0.9em; color: #666; width: 100%; text-align: center;">Your inventory is empty.</p>';
-                return;
-            }
-
-            ownedItems.forEach(item => {
-                const itemDiv = document.createElement('div');
-                itemDiv.className = 'profile-inventory-item';
-                itemDiv.innerHTML = `
-                    <img src="https://via.placeholder.com/100x60?text=${item.name.replace(/\s/g, '+')}" alt="${item.name}">
-                    <span>${item.name}</span>
-                `;
-                grid.appendChild(itemDiv);
-            });
-        }
-
-        function drawAvatarPreview(canvasId) {
-            // Placeholder for a simple 2D drawing of the avatar
-            const canvas = document.getElementById(canvasId);
-            if (!canvas) return;
-
-            const ctx = canvas.getContext('2d');
+        function initThreeJSCharacterEditor() {
+            const canvas = document.getElementById('avatarCanvas');
             const width = canvas.width;
             const height = canvas.height;
-            const size = 20;
 
-            ctx.clearRect(0, 0, width, height);
-
-            // Simple 2D "block" avatar drawing for preview
-            const colors = savedAvatar;
-
-            // Torso (Center)
-            ctx.fillStyle = colors.Torso;
-            ctx.fillRect(width/2 - size, height/2 - size*1.5, size*2, size*3);
-
-            // Head (Top)
-            ctx.fillStyle = colors.Head;
-            ctx.fillRect(width/2 - size, height/2 - size*3, size*2, size*2);
-            
-            // Left Arm (Viewer's left)
-            ctx.fillStyle = colors.LeftArm;
-            ctx.fillRect(width/2 - size*3, height/2 - size*1.5, size*2, size*3);
-
-            // Right Arm (Viewer's right)
-            ctx.fillStyle = colors.RightArm;
-            ctx.fillRect(width/2 + size, height/2 - size*1.5, size*2, size*3);
-
-            // Left Leg
-            ctx.fillStyle = colors.LeftLeg;
-            ctx.fillRect(width/2 - size, height/2 + size*1.5, size, size*3);
-
-            // Right Leg
-            ctx.fillStyle = colors.RightLeg;
-            ctx.fillRect(width/2, height/2 + size*1.5, size, size*3);
-            
-            // Placeholder for hat (Red Top Hat - if equipped)
-            if (savedAvatar.hat === 'red_top_hat') {
-                ctx.fillStyle = 'red';
-                ctx.fillRect(width/2 - size*1.2, height/2 - size*4, size*2.4, size);
+            if (scene) {
+                // Scene is already initialized, just update the character
+                updateCharacterModel();
+                return;
             }
+
+            // 1. Scene Setup
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xaaddff); // Blue sky gradient look is done via CSS background, this is the Three.js background
+
+            // 2. Camera Setup
+            camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
+            camera.position.set(0, 1.5, 3);
+            camera.lookAt(0, 1, 0);
+
+            // 3. Renderer Setup
+            renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+            renderer.setSize(width, height);
+
+            // 4. Lighting
+            const ambientLight = new THREE.AmbientLight(0x404040, 5); // soft white light
+            scene.add(ambientLight);
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 2);
+            directionalLight.position.set(2, 5, 3);
+            scene.add(directionalLight);
+
+            // 5. Create Character Model (A simple block rig)
+            characterGroup = new THREE.Group();
+            scene.add(characterGroup);
+            createCharacterParts();
+
+            // 6. Animation Loop
+            function animate() {
+                requestAnimationFrame(animate);
+                // Simple rotation for a nice preview effect
+                if (characterGroup) {
+                    characterGroup.rotation.y += 0.005;
+                }
+                renderer.render(scene, camera);
+            }
+            animate();
         }
 
-        function loadProfile() {
-            if (!currentUser) {
-                document.getElementById('profileUsernameDisplay').textContent = 'Guest';
-                document.getElementById('profileRobuxBalance').textContent = 'N/A';
-                // Clear out the inventory grid
-                document.getElementById('profileInventoryGrid').innerHTML = '<p style="font-size: 0.9em; color: #666; width: 100%; text-align: center;">Please log in to view your profile and inventory.</p>';
-                // Clear out the avatar preview
-                const canvas = document.getElementById('profileAvatarPreview');
-                const ctx = canvas.getContext('2d');
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                return;
+        function createCharacterParts() {
+            // Remove old parts if they exist
+            while (characterGroup.children.length > 0) {
+                characterGroup.remove(characterGroup.children[0]);
             }
-            document.getElementById('profileUsernameDisplay').textContent = currentUser.username;
-            updateRobuxDisplay();
-            drawAvatarPreview('profileAvatarPreview');
-            renderInventoryGrid();
+
+            const avatar = currentUser.avatar;
+
+            // Head (1x1x1)
+            const headMaterial = new THREE.MeshLambertMaterial({ color: new THREE.Color(avatar.headColor) });
+            const head = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), headMaterial);
+            head.position.y = 2.5;
+            head.name = 'Head';
+            characterGroup.add(head);
+
+            // Torso (1x1.5x0.5)
+            const torsoMaterial = new THREE.MeshLambertMaterial({ color: new THREE.Color(avatar.bodyColor) });
+            const torso = new THREE.Mesh(new THREE.BoxGeometry(1, 1.5, 0.5), torsoMaterial);
+            torso.position.y = 1.5;
+            torso.name = 'Torso';
+            characterGroup.add(torso);
+
+            // Arms (0.5x1.5x0.5)
+            const armMaterial = new THREE.MeshLambertMaterial({ color: new THREE.Color(avatar.leftArmColor) });
+            const leftArm = new THREE.Mesh(new THREE.BoxGeometry(0.5, 1.5, 0.5), armMaterial);
+            leftArm.position.set(-0.75, 1.5, 0);
+            leftArm.name = 'LeftArm';
+            characterGroup.add(leftArm);
+            const rightArm = new THREE.Mesh(new THREE.BoxGeometry(0.5, 1.5, 0.5), armMaterial);
+            rightArm.position.set(0.75, 1.5, 0);
+            rightArm.name = 'RightArm';
+            characterGroup.add(rightArm);
+
+            // Legs (1x1.5x0.5) - combined for simplicity
+            const legMaterial = new THREE.MeshLambertMaterial({ color: new THREE.Color(avatar.leftLegColor) });
+            const leftLeg = new THREE.Mesh(new THREE.BoxGeometry(0.5, 1.5, 0.5), legMaterial);
+            leftLeg.position.set(-0.25, 0.5, 0);
+            leftLeg.name = 'LeftLeg';
+            characterGroup.add(leftLeg);
+            const rightLeg = new THREE.Mesh(new THREE.BoxGeometry(0.5, 1.5, 0.5), legMaterial);
+            rightLeg.position.set(0.25, 0.5, 0);
+            rightLeg.name = 'RightLeg';
+            characterGroup.add(rightLeg);
+
+            // Apply accessories (conceptually, just re-render to update the user's current colors)
         }
 
-        // --- Friends Logic ---
-        function renderFriends() {
-            const friendListElement = document.getElementById('myFriendList');
-            friendListElement.innerHTML = '';
-            document.getElementById('friendsCount').textContent = friendsList.length;
-
-            if (!currentUser) {
-                friendListElement.innerHTML = '<li style="text-align: center;">Please log in to see friends.</li>';
-                return;
-            }
-
-            if (friendsList.length === 0) {
-                friendListElement.innerHTML = '<li style="text-align: center;">You have no friends.</li>';
-                return;
-            }
-
-            friendsList.forEach((friend, index) => {
-                const li = document.createElement('li');
-                li.innerHTML = `
-                    <span>${friend}</span>
-                    <button data-friend-index="${index}">Remove</button>
-                `;
-                friendListElement.appendChild(li);
-            });
-
-            // Add Remove Button Listeners
-            document.querySelectorAll('#myFriendList button').forEach(button => {
-                button.addEventListener('click', function() {
-                    const index = parseInt(this.dataset.friendIndex);
-                    const removedFriend = friendsList.splice(index, 1);
-                    saveFriendsList();
-                    showMessage(`${removedFriend[0]} has been removed from your friends list.`);
-                    renderFriends();
-                });
-            });
+        function updateCharacterModel() {
+            // Recreate the parts to apply new colors/accessories
+            createCharacterParts();
         }
 
-        document.getElementById('addFriendButton').addEventListener('click', function() {
-            if (!currentUser) {
-                showMessage('Please log in to add friends!', false);
+        function changeBodyColor(hexColor) {
+            currentUser.avatar.headColor = hexColor;
+            currentUser.avatar.bodyColor = hexColor;
+            currentUser.avatar.leftArmColor = hexColor;
+            currentUser.avatar.rightArmColor = hexColor;
+            currentUser.avatar.leftLegColor = hexColor;
+            currentUser.avatar.rightLegColor = hexColor;
+            updateCharacterModel();
+            showMessage(`Body color set to ${hexColor}`);
+        }
+
+        function applyAccessory(accessoryId) {
+            if (!currentUser.inventory.find(item => item.id === accessoryId)) {
+                showMessage('You do not own this item!', false);
                 return;
             }
-            const friendName = document.getElementById('addFriendInput').value.trim();
-            if (friendName && !friendsList.includes(friendName) && friendName !== currentUser.username) {
-                friendsList.push(friendName);
-                saveFriendsList();
-                document.getElementById('addFriendInput').value = '';
-                showMessage(`${friendName} has been added to your friends list!`);
-                renderFriends();
-            } else if (friendName === currentUser.username) {
-                showMessage("You can't add yourself!", false);
-            } else if (friendsList.includes(friendName)) {
-                showMessage(`${friendName} is already your friend.`, false);
+
+            // Simple toggle logic for the demo
+            const index = currentUser.avatar.accessories.indexOf(accessoryId);
+            if (index > -1) {
+                currentUser.avatar.accessories.splice(index, 1);
+                showMessage(`${accessoryId} unequipped.`);
             } else {
-                showMessage('Please enter a valid username.', false);
+                currentUser.avatar.accessories.push(accessoryId);
+                showMessage(`${accessoryId} equipped.`);
             }
-        });
+            saveCurrentUser();
+            renderCharacterEditor(); // Re-render the editor panel
+            updateCharacterModel(); // Re-render the 3D model
+        }
 
-        // --- Games Logic (Placeholder) ---
-        function renderGames(gamesArray) {
-            const gameGrid = document.getElementById('gameGrid');
-            gameGrid.innerHTML = '';
-            
-            gamesArray.forEach(game => {
-                const card = document.createElement('div');
-                card.className = 'game-card';
-                card.innerHTML = `
-                    <img src="${game.image}" alt="${game.title} thumbnail">
-                    <div class="game-title">${game.title}</div>
-                    <div class="game-players">${game.players} playing</div>
-                    <div class="game-actions">
-                        <button class="play-button" data-game-id="${game.id}">Play</button>
+        function saveAvatar() {
+            saveCurrentUser();
+            showMessage('Avatar saved successfully!');
+        }
+
+        function resetAvatar() {
+            loadCurrentUser(); // Revert to last saved state
+            updateCharacterModel();
+            showMessage('Avatar reset to last saved state.');
+        }
+
+        function renderCharacterEditor() {
+            const accessoriesPanel = document.getElementById('inventoryAccessories');
+            accessoriesPanel.innerHTML = ''; // Clear existing list
+
+            currentUser.inventory.forEach(item => {
+                const isEquipped = currentUser.avatar.accessories.includes(item.id);
+                const buttonHtml = `
+                    <div class="character-button-container owned" onclick="applyAccessory('${item.id}')" style="${isEquipped ? 'border: 3px solid #ff0000;' : ''}">
+                        <img src="${item.img || 'https://via.placeholder.com/80x80/999999/ffffff?text=Item'}" alt="${item.name}" style="width: 80px; height: 80px; object-fit: contain;">
+                        <span>${item.name}</span>
+                        ${isEquipped ? '<span style="color: #ff0000; font-size: 0.7em;">EQUIPPED</span>' : ''}
                     </div>
                 `;
-                gameGrid.appendChild(card);
+                accessoriesPanel.insertAdjacentHTML('beforeend', buttonHtml);
             });
+        }
 
-            // Add Play Button Listeners (Placeholder action)
-            document.querySelectorAll('.game-card .play-button').forEach(button => {
-                button.addEventListener('click', function() {
-                    const gameId = this.dataset.gameId;
-                    const game = defaultGames.find(g => g.id === parseInt(gameId));
-                    showMessage(`Loading game: ${game.title}...`);
-                });
+
+        // --- Catalog Functions (NEW) ---
+
+        function renderCatalogPage(category) {
+            const catalogGrid = document.getElementById('catalogGrid');
+            catalogGrid.innerHTML = ''; // Clear existing grid
+
+            const filteredCatalog = mockCatalog.filter(item => category === 'All' || item.category === category);
+
+            filteredCatalog.forEach(item => {
+                const isOwned = currentUser.inventory.some(invItem => invItem.id === item.id);
+                const buttonText = isOwned ? 'Owned' : 'Buy Now';
+                const buttonClass = isOwned ? 'buy-button disabled' : 'buy-button';
+                const buyAction = isOwned ? '' : `buyCatalogItem('${item.id}', ${item.price})`;
+
+                const itemCardHtml = `
+                    <div class="catalog-item-card">
+                        ${isOwned ? '<div class="owned-tag">OWNED</div>' : ''}
+                        <img src="${item.img}" alt="${item.name}">
+                        <div class="item-details">
+                            <div class="item-name">${item.name}</div>
+                            <div class="item-price">
+                                <span class="robux-icon">R</span>
+                                <span>${item.price.toLocaleString()}</span>
+                            </div>
+                            <button class="${buttonClass}" onclick="${buyAction}" ${isOwned ? 'disabled' : ''}>
+                                ${buttonText}
+                            </button>
+                        </div>
+                    </div>
+                `;
+                catalogGrid.insertAdjacentHTML('beforeend', itemCardHtml);
             });
+        }
+
+        function buyCatalogItem(itemId, price) {
+            if (currentUser.robux < price) {
+                showMessage('Insufficient Robux to purchase this item.', false);
+                return;
+            }
+
+            const item = mockCatalog.find(i => i.id === itemId);
+            if (currentUser.inventory.some(invItem => invItem.id === itemId)) {
+                showMessage('You already own this item.', false);
+                return;
+            }
+
+            if (item) {
+                currentUser.robux -= price;
+                currentUser.inventory.push(item);
+                saveCurrentUser();
+                loadRobuxBalance();
+                renderCatalogPage(item.category); // Refresh the catalog view
+                renderCharacterEditor(); // Update the editor inventory
+                showMessage(`Successfully purchased: ${item.name} for ${price} R!`);
+            }
+        }
+
+
+        // --- Existing and Mocked Functions (Retained and simplified) ---
+
+        function loadProfile() {
+            document.getElementById('profileUsername').textContent = currentUser.username;
+            document.getElementById('profileJoinDate').textContent = 'Oct 17, 2025'; // Mocked
+            loadRobuxBalance();
+
+            const inventoryGrid = document.getElementById('profileInventory');
+            inventoryGrid.innerHTML = '';
+            currentUser.inventory.forEach(item => {
+                const itemHtml = `
+                    <div class="profile-inventory-item">
+                        <img src="${item.img || 'https://via.placeholder.com/80x80/6c757d/ffffff?text=Item'}" alt="${item.name}">
+                        ${item.name}
+                    </div>
+                `;
+                inventoryGrid.insertAdjacentHTML('beforeend', itemHtml);
+            });
+        }
+
+        function initCharacterEditor() {
+            // Placeholder/Legacy function now calling the new 3D init
+            initThreeJSCharacterEditor();
         }
 
         function loadGames() {
-            // For now, simply render the default games
-            renderGames(defaultGames);
+             const gameGrid = document.getElementById('gameGrid');
+             gameGrid.innerHTML = '';
+             // Mock games data (simple placeholder)
+             const mockGames = [
+                { title: 'The Blocky Tower', players: '2.5K', img: 'https://via.placeholder.com/180x120/ff5733/ffffff?text=Game+1' },
+                { title: 'Murder Mystery Clone', players: '1.2K', img: 'https://via.placeholder.com/180x120/33c4ff/ffffff?text=Game+2' },
+                { title: 'High School Roleplay', players: '900', img: 'https://via.placeholder.com/180x120/33ffbd/ffffff?text=Game+3' },
+                { title: 'Car Crash Simulator 2', players: '500', img: 'https://via.placeholder.com/180x120/8e44ad/ffffff?text=Game+4' },
+                { title: 'Mega Obby 3000', players: '3.1K', img: 'https://via.placeholder.com/180x120/c0392b/ffffff?text=Game+5' },
+             ];
+             mockGames.forEach(game => {
+                 const cardHtml = `
+                     <div class="game-card">
+                         <img src="${game.img}" alt="${game.title}">
+                         <div class="game-title">${game.title}</div>
+                         <div class="game-players">${game.players} Playing</div>
+                         <div class="game-actions">
+                             <button class="play-button">Play</button>
+                         </div>
+                     </div>
+                 `;
+                 gameGrid.insertAdjacentHTML('beforeend', cardHtml);
+             });
         }
 
-        // --- Chat Logic ---
-        function renderChatMessages() {
-            const chatMessagesElement = document.getElementById('chatMessages');
-            chatMessagesElement.innerHTML = '';
-
-            if (chatMessages.length === 0) {
-                 chatMessagesElement.innerHTML = '<p style="text-align: center; color: #999;">Start a conversation!</p>';
+        function loadAdminPanel() {
+             if (!currentUser.isAdmin) {
+                 document.getElementById('adminLink').style.display = 'none';
                  return;
-            }
+             }
+             document.getElementById('adminLink').style.display = 'block';
 
-            chatMessages.forEach(message => {
-                const messageDiv = document.createElement('div');
-                // All messages are 'sent' by the current user in this simple simulation
-                messageDiv.className = 'chat-message'; 
-                messageDiv.innerHTML = `<div class="username">${message.username}</div><div>${message.text}</div>`;
-                chatMessagesElement.appendChild(messageDiv);
-            });
-            // Auto-scroll to the bottom
-            chatMessagesElement.scrollTop = chatMessagesElement.scrollHeight;
+             // Mock Admin Data
+             const users = [{ id: 1, username: 'RobloxDev', role: 'Admin' }, { id: 2, username: 'Player456', role: 'User' }];
+             const userTableBody = document.getElementById('userTableBody');
+             userTableBody.innerHTML = '';
+             users.forEach(user => {
+                 const row = `
+                     <tr>
+                         <td>${user.id}</td>
+                         <td>${user.username}</td>
+                         <td>${user.role}</td>
+                         <td class="admin-actions">
+                             <button class="delete">Ban</button>
+                             <button class="toggle-admin ${user.role === 'Admin' ? 'remove' : ''}">
+                                 ${user.role === 'Admin' ? 'Demote' : 'Promote'}
+                             </button>
+                         </td>
+                     </tr>
+                 `;
+                 userTableBody.insertAdjacentHTML('beforeend', row);
+             });
+
+             const games = [{ id: 1, title: 'The Blocky Tower', players: '2.5K' }, { id: 2, title: 'Murder Mystery Clone', players: '1.2K' }];
+             const gameTableBody = document.getElementById('gameTableBody');
+             gameTableBody.innerHTML = '';
+             games.forEach(game => {
+                 const row = `
+                     <tr>
+                         <td>${game.id}</td>
+                         <td>${game.title}</td>
+                         <td>${game.players}</td>
+                         <td class="admin-actions">
+                             <button class="delete">Remove</button>
+                             <button>Feature</button>
+                         </td>
+                     </tr>
+                 `;
+                 gameTableBody.insertAdjacentHTML('beforeend', row);
+             });
+
+             const forumModerationTableBody = document.getElementById('forumModerationTableBody');
+             forumModerationTableBody.innerHTML = '';
+             forumTopics.forEach(topic => {
+                 const row = `
+                     <tr>
+                         <td>${topic.id}</td>
+                         <td>${topic.title}</td>
+                         <td>${topic.author}</td>
+                         <td class="admin-actions">
+                             <button class="delete" onclick="deleteForumTopic(${topic.id})">Delete</button>
+                         </td>
+                     </tr>
+                 `;
+                 forumModerationTableBody.insertAdjacentHTML('beforeend', row);
+             });
         }
-        
-        document.getElementById('chatInputForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const chatMessageInput = document.getElementById('chatMessageInput');
 
-            if (!currentUser) {
-                showMessage('Please log in to chat!', false);
-                return;
-            }
-
-            const messageText = chatMessageInput.value.trim();
-            if (messageText) {
-                const newMessage = {
-                    username: currentUser.username,
-                    text: messageText,
-                    timestamp: new Date().toISOString()
-                };
-                chatMessages.push(newMessage);
-                saveChatMessages();
-                renderChatMessages();
-                chatMessageInput.value = ''; // Clear input
-            }
-        });
+        // --- Other Mocked Functions ---
+        function renderFriends() { /*...*/ }
+        function renderChatMessages() { /*...*/ }
+        function renderForum() { /*...*/ }
+        function updateNotificationBadge() { /*...*/ }
 
 
         // --- Initial Load Functions ---
         document.addEventListener('DOMContentLoaded', () => {
-            // Load current user first
             loadCurrentUser();
-
-            // Initial loads for all features
-            loadRobuxBalance(); // Load Robux balance first
-            loadInventory(); // Load inventory here, before other loads that depend on it
+            loadRobuxBalance();
+            loadAdminPanel(); // Check if admin link should be visible
             
-            initAvatarEditor(); // Initialize Avatar Editor (will load saved avatar and enable/disable hats)
-            loadProfile(); // Load Profile data (including avatar preview and inventory)
-            renderCatalog(); // Render Catalog items (showing ownership status)
-            loadFriendsList();
-            renderFriends(); // Render Friends list
-            loadChatMessages();
-            renderChatMessages(); // Render Chat messages
-            
-            // Initial games load if on the Home tab (which is default)
-            loadGames(); 
+            // Set up event listeners for the new tab functionality
+            const tabs = {
+                'homeTab': () => {},
+                'gamesTab': loadGames,
+                'avatarTab': initThreeJSCharacterEditor,
+                'catalogTab': () => renderCatalogPage('All'),
+                'profileTab': loadProfile,
+                'friendsTab': renderFriends,
+                'chatTab': renderChatMessages,
+                'forumTab': renderForum,
+                'notificationsTab': updateNotificationBadge,
+                'settingsTab': () => {},
+                'adminTab': loadAdminPanel
+            };
 
-            // Initialize the 3D editor if the Avatar tab is currently active (it's not by default, but safe to check)
-            if (tabs.avatar.classList.contains('active') && window.init3DAvatarEditor) {
-                window.init3DAvatarEditor();
+            // Initial rendering based on active tab (default to home)
+            const activeTabId = document.querySelector('.tab.active').id;
+            if (tabs[activeTabId]) {
+                tabs[activeTabId]();
             }
+
+            // Override updateTabContent to execute the necessary logic
+            window.updateTabContent = (tabId) => {
+                document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+                document.getElementById(tabId).classList.add('active');
+                if (tabs[tabId]) {
+                    tabs[tabId]();
+                }
+            };
+
+            // Call initial rendering functions
+            loadGames();
+            initThreeJSCharacterEditor();
+            renderCatalogPage('All'); // Initial catalog render
+            loadProfile();
+            renderFriends();
+            renderChatMessages();
+            renderForum();
+            updateNotificationBadge();
         });
     </script>
 </body>
