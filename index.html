@@ -95,20 +95,16 @@
             border-color: #999;
         }
 
-        /* Chat Specific Styles */
-        #chat-history {
-            height: 400px; /* Fixed chat window height */
+        /* Chat & Forum Specific Styles */
+        #chat-history, #posts-container {
             overflow-y: auto;
             background-color: #f0f0f0;
             padding: 10px;
             border: 1px solid #ccc;
         }
+        #chat-history { height: 400px; }
 
-        .chat-message {
-            display: flex;
-            margin-bottom: 8px;
-        }
-
+        .chat-message { display: flex; margin-bottom: 8px; }
         .chat-bubble {
             max-width: 85%;
             padding: 8px 12px;
@@ -118,17 +114,15 @@
             box-shadow: 0 1px 1px rgba(0,0,0,0.1);
             word-wrap: break-word;
         }
-
         .user-bubble {
-            background-color: #e0f0ff; /* Light blue for user */
+            background-color: #e0f0ff;
             border: 1px solid #a0c0e0;
-            margin-left: auto; /* Push to the right */
+            margin-left: auto;
         }
-
         .ai-bubble {
-            background-color: #ffffff; /* White/gray for AI */
+            background-color: #ffffff;
             border: 1px solid #a7a7a7;
-            margin-right: auto; /* Stay on the left */
+            margin-right: auto;
         }
         .citation-footer {
             border-top: 1px solid #e0e0e0;
@@ -137,11 +131,7 @@
             color: #555;
             font-size: 9px;
         }
-        #chatInput {
-            resize: none;
-            height: 60px; /* Taller input area */
-            font-size: 12px;
-        }
+        #chatInput { resize: none; height: 60px; font-size: 12px; }
         
         .main-content-area {
             display: flex;
@@ -151,6 +141,15 @@
     </style>
 </head>
 <body onload="navigateTo('chat')">
+
+    <!-- Custom Modal for Alerts (Required to replace window.alert) -->
+    <div id="custom-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50 transition-opacity duration-300">
+        <div class="bg-white p-4 rounded shadow-2xl w-80 rblx-panel" style="border-color:#ff9900; border-width: 3px;">
+            <h3 id="modal-title" class="font-bold text-lg mb-2 text-red-600"></h3>
+            <p id="modal-message" class="text-sm mb-4"></p>
+            <button onclick="document.getElementById('custom-modal').classList.add('hidden')" class="rblx-button float-right py-1 px-3 text-xs">OK</button>
+        </div>
+    </div>
 
     <div class="rblx-container">
         <!-- TOP HEADER BAR (Classic Rôblox Logo/Play Now) -->
@@ -168,13 +167,13 @@
         <nav class="rblx-nav flex flex-wrap" id="main-nav">
             <a href="javascript:void(0)" onclick="navigateTo('chat')">My AI</a>
             <a href="javascript:void(0)" onclick="navigateTo('models')">Models & Pricing</a>
-            <a href="javascript:void(0)" onclick="navigateTo('help')">Help</a>
             <a href="javascript:void(0)" onclick="navigateTo('forum')">Forum</a>
+            <a href="javascript:void(0)" onclick="navigateTo('help')">Help</a>
         </nav>
 
         <!-- ALERT BANNER (Orange Bar) -->
         <div class="bg-[#ffc600] border-y border-[#c80] p-2 text-center text-xs font-bold shadow-md">
-            <span style="font-size: 14px; margin-right: 5px;">&#x26A0;</span> Are you an experienced Scripter? Come help us test our new AI models!
+            <span style="font-size: 14px; margin-right: 5px;">&#x26A0;</span> Share your LUA scripts and collaborate with other developers on the new Forum!
         </div>
 
         <!-- MAIN CONTENT AREA -->
@@ -184,26 +183,216 @@
 
     </div>
 
+    <!-- Firebase Imports MUST be defined within a type="module" script -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, query, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        
+        // Expose necessary functions/variables globally for use in the main script block
+        window.initializeFirebase = initializeFirebase;
+        window.submitForumPost = submitForumPost;
+        window.loadForumPosts = loadForumPosts;
+        window.getForumCollectionRef = getForumCollectionRef;
+        window.setUserId = (id) => { window.userId = id; }; // Setter for userId
+
+        // --- Global Firebase State ---
+        let db;
+        let auth;
+        window.userId = 'loading...'; // Default global for use by HTML/main script
+        window.isAuthReady = false;
+
+        function getAppId() {
+             return typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        }
+
+        /**
+         * Initializes Firebase and handles user authentication.
+         */
+        async function initializeFirebase() {
+            // Get mandatory global variables
+            const appId = getAppId();
+            const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+            const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+            if (firebaseConfig) {
+                try {
+                    const app = initializeApp(firebaseConfig);
+                    db = getFirestore(app);
+                    auth = getAuth(app);
+                    setLogLevel('Debug'); // Enable Firestore logging
+
+                    // Authenticate user using the provided token or anonymously
+                    onAuthStateChanged(auth, async (user) => {
+                        if (!user) {
+                            try {
+                                if (initialAuthToken) {
+                                    await signInWithCustomToken(auth, initialAuthToken);
+                                } else {
+                                    await signInAnonymously(auth);
+                                }
+                                user = auth.currentUser;
+                            } catch (error) {
+                                console.error("Firebase Auth Error:", error);
+                            }
+                        }
+                        
+                        // User is authenticated (either signed in or anonymous)
+                        window.userId = user?.uid || crypto.randomUUID();
+                        window.isAuthReady = true;
+                        console.log("Firebase initialized. User ID:", window.userId);
+                        
+                        // If the forum content is currently loaded, start listening
+                        if (document.getElementById('forum-content')) {
+                             loadForumPosts();
+                        }
+                        
+                        // Update the displayed User ID everywhere it might be used
+                        const userIdDisplay = document.getElementById('user-id-display');
+                        if (userIdDisplay) {
+                            userIdDisplay.textContent = window.userId;
+                        }
+                    });
+                } catch (error) {
+                    console.error("Firebase Initialization Failed:", error);
+                    window.alertMessage('System Error', 'Failed to connect to Firebase database.');
+                }
+            } else {
+                console.warn("Firebase config not found. Database features disabled.");
+            }
+        }
+
+        /**
+         * Gets the Firestore path for the public forum collection.
+         */
+        function getForumCollectionRef() {
+            const forumPath = `/artifacts/${getAppId()}/public/data/forum_posts`;
+            return collection(db, forumPath);
+        }
+
+        /**
+         * Submits a new post to Firestore.
+         */
+        async function submitForumPost() {
+            if (!window.isAuthReady || !db) {
+                window.alertMessage('System Error', 'Database is not ready. Please wait for initialization.');
+                return;
+            }
+
+            const titleInput = document.getElementById('post-title');
+            const contentInput = document.getElementById('post-content');
+
+            const title = titleInput.value.trim();
+            const content = contentInput.value.trim();
+
+            if (!title || !content) {
+                window.alertMessage('Input Error', 'Post title and content cannot be empty.');
+                return;
+            }
+
+            try {
+                await addDoc(getForumCollectionRef(), {
+                    title: title,
+                    content: content,
+                    authorId: window.userId, // Use current user ID
+                    timestamp: serverTimestamp()
+                });
+
+                titleInput.value = '';
+                contentInput.value = '';
+                window.alertMessage('Success', 'Your post has been successfully added to the Rôblox Forum!');
+
+            } catch (e) {
+                console.error("Error adding document: ", e);
+                window.alertMessage('Database Error', 'Failed to submit post. See console for details.');
+            }
+        }
+
+        // Global array to hold posts
+        window.forumPosts = [];
+
+        /**
+         * Listens for forum posts in real-time.
+         */
+        function loadForumPosts() {
+            if (!window.isAuthReady || !db) {
+                console.log("Firestore or Auth not ready. Skipping forum load.");
+                return;
+            }
+
+            // Query the public collection
+            const q = query(getForumCollectionRef());
+
+            // Use onSnapshot for real-time updates
+            onSnapshot(q, (snapshot) => {
+                window.forumPosts = [];
+                snapshot.docs.forEach((doc) => {
+                    window.forumPosts.push({ id: doc.id, ...doc.data() });
+                });
+
+                // Sort by timestamp descending (newest first)
+                window.forumPosts.sort((a, b) => {
+                    // Handle pending serverTimestamp (null) by pushing them to the end
+                    if (!a.timestamp) return 1;
+                    if (!b.timestamp) return -1;
+                    return b.timestamp.toMillis() - a.timestamp.toMillis();
+                });
+
+                window.renderForumPosts();
+            }, (error) => {
+                console.error("Error listening to forum posts:", error);
+                window.alertMessage('Real-time Error', 'Could not fetch forum updates.');
+            });
+        }
+        
+        // Call initialization on load of the module script
+        initializeFirebase();
+
+    </script>
+    
     <script>
         // --- Configuration ---
         const MODELS = {
-            // FLASH model is now FREE
             'FLASH': { name: 'gemini-2.5-flash-preview-09-2025', display: 'Flash', cost: 'FREE TIER', monthly: '$0' },
-            // Paid models (simulated access restriction)
             'PRO': { name: 'gemini-2.5-pro-preview-09-2025', display: 'Pro', cost: 'MONTHLY ACCESS', monthly: '$9.99/mo' },
             'ULTRA': { name: 'gemini-2.5-ultra-preview-09-2025', display: 'Ultra', cost: 'PREMIUM MONTHLY', monthly: '$19.99/mo' },
         };
-        const apiKey = ""; // Leave as empty string. Canvas will automatically inject the key.
+        const apiKey = "";
         const systemInstruction = "Act as a helpful, quick, and knowledgeable Rôblox AI assistant. Respond concisely, focusing on LUA scripting, game design, and Rôblox development best practices. Always mention the active model's name in your first response.";
 
 
-        // --- Global State ---
+        // --- Global State & Helpers ---
         let currentModelKey = 'FLASH';
         let currentModelName = MODELS[currentModelKey].name;
         
         let chatHistoryData = [
              { sender: 'ai', text: `Welcome! I am Rôblox AI ${MODELS.FLASH.display}. I specialize in Rôblox development assistance. How can I help you build your game today?` }
         ];
+
+        /**
+         * Custom modal replacement for alert() and confirm().
+         */
+        function alertMessage(title, message) {
+            const modal = document.getElementById('custom-modal');
+            if (!modal) {
+                console.warn(`${title}: ${message}`);
+                return;
+            }
+            
+            document.getElementById('modal-title').textContent = title;
+            document.getElementById('modal-message').textContent = message;
+            
+            // Show the modal
+            modal.classList.remove('hidden');
+
+            // Automatically hide after 4 seconds
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 4000);
+        }
+        window.alertMessage = alertMessage; // Make accessible globally
+
 
         /**
          * Returns the dynamically generated API URL based on the current model selection.
@@ -251,14 +440,12 @@
 
             // 1. Check for subscription restriction (Simulated)
             if (modelKey !== 'FLASH') {
-                // Since this is a simple front-end example, we use a simple message box (no alert())
-                appendMessage('ai', `**ACCESS DENIED:** The ${newModelInfo.display} model requires a monthly subscription of ${newModelInfo.monthly}. Please select the FREE TIER (Flash) or visit the Models page to subscribe.`);
+                // Since this is a simple front-end example, we use a custom message box
+                alertMessage('Access Denied', `The ${newModelInfo.display} model requires a monthly subscription of ${newModelInfo.monthly}. Please select the FREE TIER (Flash) or visit the Models page to subscribe.`);
                 
                 // Reset the selector back to the current active model if a switch was attempted
                 const selector = document.getElementById('modelSelector');
                 if (selector) selector.value = currentModelKey;
-                
-                renderChatHistory(); // Ensure history is updated with the access denied message
                 return;
             }
 
@@ -328,14 +515,12 @@
 
             chatHistoryElement.innerHTML = ''; // Clear existing content
             chatHistoryData.forEach(msg => {
-                // Simplified append for re-render
                 const messageDiv = document.createElement('div');
                 messageDiv.className = 'chat-message';
                 const bubbleDiv = document.createElement('div');
                 
                 const formattedText = msg.text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
 
-                // Check if message is a simulated access denied message (for coloring)
                 if (msg.text.includes('ACCESS DENIED')) {
                     bubbleDiv.className = 'chat-bubble ai-bubble bg-red-100 border-red-500 text-red-700';
                     bubbleDiv.innerHTML = `<p>${formattedText}</p>`;
@@ -400,7 +585,7 @@
 
                 const payload = {
                     contents: contents,
-                    tools: [{ "google_search": {} }], // Use Google Search for grounding
+                    tools: [{ "google_search": {} }],
                     systemInstruction: {
                         parts: [{ text: systemInstruction }]
                     },
@@ -463,7 +648,7 @@
             } catch (error) {
                 console.error("Fatal error during AI generation:", error);
                 // 2. Replace loading message with error
-                const errorMsg = `ERROR: [CRITICAL_FAILURE] - AI Service Call Failed. The service may be unavailable or the API key may be invalid. Details: ${error.message}`;
+                const errorMsg = `ERROR: [CRITICAL_FAILURE] - AI Service Call Failed. The service may be unavailable. Details: ${error.message}`;
                 if (tempMessageDiv) {
                     // Update the loading bubble to an error state
                     const bubble = tempMessageDiv.querySelector('.chat-bubble');
@@ -482,12 +667,51 @@
                 chatInput.focus();
             }
         }
-
-        // --- View Content HTML (Remaining unchanged) ---
+        
+        // --- Forum View Logic ---
 
         /**
-         * Generates the HTML for the chat view, including the model selector.
+         * Renders the forum posts list from the global array.
          */
+        function renderForumPosts() {
+            const postsContainer = document.getElementById('posts-container');
+            const userIdDisplay = document.getElementById('user-id-display');
+            
+            if (!postsContainer) return;
+            
+            // Update User ID Display
+            if (userIdDisplay) {
+                userIdDisplay.textContent = window.userId;
+            }
+
+            postsContainer.innerHTML = ''; // Clear existing posts
+
+            if (window.forumPosts.length === 0) {
+                postsContainer.innerHTML = '<p class="text-center text-gray-500 p-8">No posts yet! Be the first to start a discussion.</p>';
+                return;
+            }
+
+            window.forumPosts.forEach(post => {
+                const time = post.timestamp ? new Date(post.timestamp.seconds * 1000).toLocaleString() : 'Posting...';
+                const authorIdShort = post.authorId ? post.authorId.substring(0, 8) + '...' : 'Unknown User';
+                
+                const postElement = document.createElement('div');
+                postElement.className = 'rblx-panel p-4 mb-4 border-l-4 border-gray-400 shadow-md';
+                postElement.innerHTML = `
+                    <h4 class="font-extrabold text-sm mb-1 text-blue-700">${post.title}</h4>
+                    <p class="text-xs text-gray-600 mb-2">
+                        Posted by: <strong class="text-black">${authorIdShort}</strong> at ${time}
+                    </p>
+                    <div class="text-sm border-t border-gray-200 pt-2 mt-2 whitespace-pre-wrap">${post.content}</div>
+                `;
+                postsContainer.appendChild(postElement);
+            });
+        }
+        window.renderForumPosts = renderForumPosts;
+
+
+        // --- HTML Content Views ---
+
         const chatViewHtml = () => {
             const currentModelInfo = MODELS[currentModelKey];
             const options = Object.keys(MODELS).map(key => {
@@ -579,6 +803,40 @@
                 </div>
             </div>
         `;
+        
+        const forumViewHtml = () => `
+            <div id="forum-content" class="p-5">
+                <h2 class="font-bold text-base mb-3 border-b border-gray-300 pb-1">
+                    Rôblox AI Developer Forum
+                </h2>
+
+                <!-- Current User ID Display -->
+                <div class="rblx-panel bg-yellow-100 border-yellow-500 p-2 mb-4 text-xs font-bold flex flex-col sm:flex-row justify-between items-start sm:items-center">
+                    <span>
+                        <span class="text-red-600">&#x26A0;</span> Your User ID:
+                        <strong id="user-id-display" class="text-green-700 text-sm break-all">${window.userId}</strong>
+                    </span>
+                    <span class="text-gray-600 text-[10px] mt-1 sm:mt-0">(Share this ID with others to collaborate!)</span>
+                </div>
+
+                <!-- NEW POST FORM -->
+                <div class="rblx-panel p-4 mb-6 border-l-4 border-red-500 shadow-lg">
+                    <h3 class="font-bold text-sm mb-3">Start a New Discussion</h3>
+                    <input type="text" id="post-title" placeholder="Enter post title (e.g., 'Help with Raycasting in LUA')" class="w-full p-2 mb-2 border border-gray-300 rounded-sm text-sm">
+                    <textarea id="post-content" placeholder="Write your full post or question here (e.g., 'I am trying to use a remote event to fire...') " class="w-full p-2 mb-3 border border-gray-300 rounded-sm text-sm" rows="4"></textarea>
+                    <button onclick="window.submitForumPost()" class="rblx-button w-full md:w-1/3 py-2 text-sm">
+                        POST TO FORUM
+                    </button>
+                </div>
+
+                <!-- EXISTING POSTS LIST -->
+                <h3 class="font-bold text-sm mb-3 border-b border-gray-300 pb-1">Recent Topics</h3>
+                <div id="posts-container" class="space-y-4 min-h-[200px] border border-gray-300 bg-[#f7f7f7]">
+                    <p class="text-center text-gray-500 p-8">Loading posts...</p>
+                </div>
+            </div>
+        `;
+
 
         // --- View Controller ---
 
@@ -588,7 +846,7 @@
         function navigateTo(viewName) {
             const mainContentDisplay = document.getElementById('main-content-display');
             const navLinks = document.querySelectorAll('#main-nav a');
-
+            
             // 1. Update navigation active state
             navLinks.forEach(link => {
                 link.classList.remove('active');
@@ -604,18 +862,22 @@
             switch(viewName) {
                 case 'chat':
                     mainContentDisplay.innerHTML = chatViewHtml();
-                    // Re-attach listeners and render history after DOM update
                     document.getElementById('chatInput').onkeydown = handleKeydown;
                     renderChatHistory();
-                    // Ensure the model selector reflects the current state
                     const selector = document.getElementById('modelSelector');
                     if(selector) selector.value = currentModelKey;
                     break;
                 case 'models':
                     mainContentDisplay.innerHTML = modelsViewHtml;
                     break;
+                case 'forum':
+                    mainContentDisplay.innerHTML = forumViewHtml();
+                    // Load posts only if the forum is the active view and Firebase is ready
+                    if(window.isAuthReady && typeof window.loadForumPosts === 'function') {
+                        window.loadForumPosts();
+                    }
+                    break;
                 default:
-                    // Default for Help, Forum, etc.
                     mainContentDisplay.innerHTML = `
                         <div class="rblx-panel p-10 text-center text-gray-500">
                             <h2 class="font-bold text-base mb-3">${viewName.charAt(0).toUpperCase() + viewName.slice(1)}</h2>
