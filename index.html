@@ -189,6 +189,7 @@
         const MODELS = {
             // FLASH model is now FREE
             'FLASH': { name: 'gemini-2.5-flash-preview-09-2025', display: 'Flash', cost: 'FREE TIER', monthly: '$0' },
+            // Paid models (simulated access restriction)
             'PRO': { name: 'gemini-2.5-pro-preview-09-2025', display: 'Pro', cost: 'MONTHLY ACCESS', monthly: '$9.99/mo' },
             'ULTRA': { name: 'gemini-2.5-ultra-preview-09-2025', display: 'Ultra', cost: 'PREMIUM MONTHLY', monthly: '$19.99/mo' },
         };
@@ -196,7 +197,7 @@
         const systemInstruction = "Act as a helpful, quick, and knowledgeable Rôblox AI assistant. Respond concisely, focusing on LUA scripting, game design, and Rôblox development best practices. Always mention the active model's name in your first response.";
 
 
-        // --- Global State & DOM Elements (Dynamically queried) ---
+        // --- Global State ---
         let currentModelKey = 'FLASH';
         let currentModelName = MODELS[currentModelKey].name;
         
@@ -246,11 +247,25 @@
          * @param {string} modelKey - The key of the model to switch to ('FLASH', 'PRO', 'ULTRA').
          */
         function switchModel(modelKey) {
-            currentModelKey = modelKey;
-            currentModelName = MODELS[modelKey].name;
             const newModelInfo = MODELS[modelKey];
 
-            // Determine cost message for chat history
+            // 1. Check for subscription restriction (Simulated)
+            if (modelKey !== 'FLASH') {
+                // Since this is a simple front-end example, we use a simple message box (no alert())
+                appendMessage('ai', `**ACCESS DENIED:** The ${newModelInfo.display} model requires a monthly subscription of ${newModelInfo.monthly}. Please select the FREE TIER (Flash) or visit the Models page to subscribe.`);
+                
+                // Reset the selector back to the current active model if a switch was attempted
+                const selector = document.getElementById('modelSelector');
+                if (selector) selector.value = currentModelKey;
+                
+                renderChatHistory(); // Ensure history is updated with the access denied message
+                return;
+            }
+
+            // 2. Successful Switch (Only if Flash is selected)
+            currentModelKey = modelKey;
+            currentModelName = MODELS[modelKey].name;
+            
             const costMsg = newModelInfo.monthly === '$0' ? 'Free Tier' : `Monthly cost: ${newModelInfo.monthly}`;
 
             // Clear chat history as the persona/capability fundamentally changes
@@ -268,12 +283,12 @@
         /**
          * Appends a new message bubble to the chat history.
          */
-        function appendMessage(sender, text, sourcesHtml = '') {
+        function appendMessage(sender, text, sourcesHtml = '', isTemporary = false) {
             const chatHistory = document.getElementById('chat-history');
             if (!chatHistory) return;
 
             // Update chat history data state (only permanent messages)
-            if (text.indexOf('generating content') === -1 && text.indexOf('CRITICAL_FAILURE') === -1) {
+            if (!isTemporary) {
                 chatHistoryData.push({ sender, text });
             }
 
@@ -281,8 +296,18 @@
             messageDiv.className = 'chat-message';
 
             const bubbleDiv = document.createElement('div');
-            bubbleDiv.className = `chat-bubble ${sender}-bubble`;
+            const baseClasses = 'chat-bubble';
+
+            if (sender === 'user') {
+                bubbleDiv.className = `${baseClasses} user-bubble`;
+            } else {
+                bubbleDiv.className = `${baseClasses} ai-bubble`;
+            }
             
+            if (isTemporary) {
+                 messageDiv.id = 'temp-loading-message'; // Give it an ID to find/remove later
+            }
+
             // Convert markdown style bolding to HTML for better display in the classic UI
             const formattedText = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
             bubbleDiv.innerHTML = `<p>${formattedText}</p>${sourcesHtml}`;
@@ -307,9 +332,18 @@
                 const messageDiv = document.createElement('div');
                 messageDiv.className = 'chat-message';
                 const bubbleDiv = document.createElement('div');
-                bubbleDiv.className = `chat-bubble ${msg.sender}-bubble`;
+                
                 const formattedText = msg.text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
-                bubbleDiv.innerHTML = `<p>${formattedText}</p>`;
+
+                // Check if message is a simulated access denied message (for coloring)
+                if (msg.text.includes('ACCESS DENIED')) {
+                    bubbleDiv.className = 'chat-bubble ai-bubble bg-red-100 border-red-500 text-red-700';
+                    bubbleDiv.innerHTML = `<p>${formattedText}</p>`;
+                } else {
+                    bubbleDiv.className = `chat-bubble ${msg.sender}-bubble`;
+                    bubbleDiv.innerHTML = `<p>${formattedText}</p>`;
+                }
+                
                 messageDiv.appendChild(bubbleDiv);
                 chatHistoryElement.appendChild(messageDiv);
             });
@@ -328,7 +362,7 @@
 
 
         /**
-         * Handles the API call and updates the UI with the generated response.
+         * THE PRE-MADE API SERVICE: Handles the Gemini API call and updates the UI.
          */
         async function generateAIResponse() {
             const chatInput = document.getElementById('chatInput');
@@ -344,18 +378,18 @@
 
             // --- UI State: Loading ---
             const loadingText = `<span class="text-gray-500 flex items-center"><svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Rôblox AI is generating content...</span>`;
-            appendMessage('ai', loadingText);
+            appendMessage('ai', loadingText, '', true); // Mark as temporary
 
             sendButton.disabled = true;
             chatInput.disabled = true;
-            const chatHistory = document.getElementById('chat-history');
-            const tempMessageDiv = chatHistory ? chatHistory.lastChild : null;
+            
+            const tempMessageDiv = document.getElementById('temp-loading-message');
 
 
             try {
                 const apiUrl = getApiUrl();
 
-                // Build the chat history for the API call
+                // Build the chat history for the API call (excluding the temporary message)
                 const contents = chatHistoryData.map(msg => ({
                     role: msg.sender === 'user' ? 'user' : 'model',
                     parts: [{ text: msg.text }]
@@ -366,7 +400,7 @@
 
                 const payload = {
                     contents: contents,
-                    tools: [{ "google_search": {} }],
+                    tools: [{ "google_search": {} }], // Use Google Search for grounding
                     systemInstruction: {
                         parts: [{ text: systemInstruction }]
                     },
@@ -388,7 +422,7 @@
                 if (candidate && candidate.content?.parts?.[0]?.text) {
                     generatedText = candidate.content.parts[0].text;
 
-                    // --- Extract Grounding Sources ---
+                    // --- Extract Grounding Sources (Citations) ---
                     const groundingMetadata = candidate.groundingMetadata;
                     let sources = [];
 
@@ -421,21 +455,24 @@
                 }
 
                 // 2. Remove loading message and append final AI message
-                if (tempMessageDiv && chatHistory) {
-                    chatHistory.removeChild(tempMessageDiv);
-                    appendMessage('ai', generatedText, sourcesHtml);
+                if (tempMessageDiv && tempMessageDiv.parentNode) {
+                    tempMessageDiv.parentNode.removeChild(tempMessageDiv);
+                    appendMessage('ai', generatedText, sourcesHtml, false); // Append as permanent
                 }
 
             } catch (error) {
                 console.error("Fatal error during AI generation:", error);
                 // 2. Replace loading message with error
-                const errorMsg = `ERROR: [CRITICAL_FAILURE] - API Call Failed. Check your connection or upgrade your model. Details: ${error.message}`;
+                const errorMsg = `ERROR: [CRITICAL_FAILURE] - AI Service Call Failed. The service may be unavailable or the API key may be invalid. Details: ${error.message}`;
                 if (tempMessageDiv) {
                     // Update the loading bubble to an error state
-                    const bubble = tempMessageDiv.querySelector('.ai-bubble');
+                    const bubble = tempMessageDiv.querySelector('.chat-bubble');
                     if (bubble) {
                          bubble.className = 'chat-bubble ai-bubble bg-red-100 border-red-500 text-red-700';
                          bubble.innerHTML = `<p>${errorMsg}</p>`;
+                         // Remove the temporary ID so it becomes a permanent error message
+                         tempMessageDiv.removeAttribute('id');
+                         chatHistoryData.push({ sender: 'ai', text: errorMsg });
                     }
                 }
             } finally {
@@ -446,7 +483,7 @@
             }
         }
 
-        // --- View Content HTML ---
+        // --- View Content HTML (Remaining unchanged) ---
 
         /**
          * Generates the HTML for the chat view, including the model selector.
@@ -466,7 +503,7 @@
                             ${options}
                         </select>
                     </div>
-                    <p class="text-xs text-gray-500 mt-2">Current Model: <strong class="text-black">${currentModelInfo.display}</strong>. Only the Flash model is free.</p>
+                    <p class="text-xs text-gray-500 mt-2">Current Model: <strong class="text-black">${currentModelInfo.display}</strong>. Only the Flash model is free. (Pro/Ultra require subscription.)</p>
                 </div>
 
                 <h2 class="font-bold text-base mb-3 border-b border-gray-300 pb-1">AI Development Chat Session</h2>
@@ -523,7 +560,7 @@
                         <p class="mb-2 text-sm"><strong>Capability:</strong> Advanced logical structure, full game state management, complex data analysis, and detailed asset description generation.</p>
                         <p class="mb-3 text-sm"><strong>Best For:</strong> Full game prototypes, deep code analysis, handling large script files.</p>
                         <p class="text-blue-600 font-bold text-xl">${MODELS.PRO.monthly}</p>
-                        <button class="rblx-button mt-3" onclick="alert('Subscription feature coming soon! You selected the PRO model.')">
+                        <button class="rblx-button mt-3" onclick="switchModel('PRO')">
                             SUBSCRIBE
                         </button>
                     </div>
@@ -535,7 +572,7 @@
                         <p class="mb-2 text-sm"><strong>Capability:</strong> Real-time physics simulation guidance, high-fidelity world-building suggestions, and multi-agent AI planning.</p>
                         <p class="mb-3 text-sm"><strong>Best For:</strong> Physics engines, realistic NPC behavior, cutting-edge game experiments.</p>
                         <p class="text-yellow-600 font-bold text-xl">${MODELS.ULTRA.monthly}</p>
-                        <button class="rblx-button mt-3 bg-yellow-600 border-yellow-800 hover:bg-yellow-700" onclick="alert('Subscription feature coming soon! You selected the ULTRA model.')">
+                        <button class="rblx-button mt-3 bg-yellow-600 border-yellow-800 hover:bg-yellow-700" onclick="switchModel('ULTRA')">
                             SUBSCRIBE
                         </button>
                     </div>
