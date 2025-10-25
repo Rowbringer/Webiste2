@@ -358,17 +358,43 @@
             'PRO': { name: 'gemini-2.5-pro-preview-09-2025', display: 'Pro', cost: 'MONTHLY ACCESS', monthly: '$9.99/mo' },
             'ULTRA': { name: 'gemini-2.5-ultra-preview-09-2025', display: 'Ultra', cost: 'PREMIUM MONTHLY', monthly: '$19.99/mo' },
         };
-        const apiKey = "";
+        // NOTE: The apiKey MUST be set to "" for the Canvas environment, but since the user
+        // is hosting on GitHub, we will let them provide their own key via the UI/localStorage.
+        
         const systemInstruction = "Act as a helpful, quick, and knowledgeable Rôblox AI assistant. Respond concisely, focusing on LUA scripting, game design, and Rôblox development best practices. Always mention the active model's name in your first response.";
 
 
         // --- Global State & Helpers ---
         let currentModelKey = 'FLASH';
         let currentModelName = MODELS[currentModelKey].name;
+        // Load API key from local storage for persistence outside of the secure hosting environment
+        let userApiKey = localStorage.getItem('geminiApiKey') || ''; 
         
         let chatHistoryData = [
              { sender: 'ai', text: `Welcome! I am Rôblox AI ${MODELS.FLASH.display}. I specialize in Rôblox development assistance. How can I help you build your game today?` }
         ];
+
+        /**
+         * Saves the user-provided API key to local storage and updates the global state.
+         */
+        function saveApiKey() {
+            const keyInput = document.getElementById('apiKeyInput');
+            const key = keyInput.value.trim();
+            
+            if (key) {
+                localStorage.setItem('geminiApiKey', key);
+                userApiKey = key;
+                alertMessage('Success', 'Gemini API Key saved and ready to use! The AI chat should now function.');
+            } else {
+                localStorage.removeItem('geminiApiKey');
+                userApiKey = '';
+                alertMessage('Key Cleared', 'API Key has been cleared from local storage. You will need to re-enter it to use the chat.');
+            }
+            // Re-render the model view to show the updated key status
+            navigateTo('models');
+        }
+        window.saveApiKey = saveApiKey; // Make accessible globally
+
 
         /**
          * Custom modal replacement for alert() and confirm().
@@ -398,7 +424,12 @@
          * Returns the dynamically generated API URL based on the current model selection.
          */
         function getApiUrl() {
-            return `https://generativelanguage.googleapis.com/v1beta/models/${currentModelName}:generateContent?key=${apiKey}`;
+            const key = userApiKey; // Use the key from user input/localStorage
+            if (!key) {
+                // If the user hasn't provided one, API calls will fail.
+                return null;
+            }
+            return `https://generativelanguage.googleapis.com/v1beta/models/${currentModelName}:generateContent?key=${key}`;
         }
 
         /**
@@ -521,7 +552,7 @@
                 
                 const formattedText = msg.text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
 
-                if (msg.text.includes('ACCESS DENIED')) {
+                if (msg.text.includes('ACCESS DENIED') || msg.text.includes('CRITICAL_FAILURE')) {
                     bubbleDiv.className = 'chat-bubble ai-bubble bg-red-100 border-red-500 text-red-700';
                     bubbleDiv.innerHTML = `<p>${formattedText}</p>`;
                 } else {
@@ -570,10 +601,20 @@
             
             const tempMessageDiv = document.getElementById('temp-loading-message');
 
+            const apiUrl = getApiUrl();
+            if (!apiUrl) {
+                if (tempMessageDiv && tempMessageDiv.parentNode) {
+                    tempMessageDiv.parentNode.removeChild(tempMessageDiv);
+                }
+                alertMessage('Configuration Required', 'Please go to the "Models & Pricing" tab and enter your Gemini API Key to continue.');
+                sendButton.disabled = false;
+                chatInput.disabled = false;
+                chatInput.focus();
+                return; // Stop execution
+            }
+
 
             try {
-                const apiUrl = getApiUrl();
-
                 // Build the chat history for the API call (excluding the temporary message)
                 const contents = chatHistoryData.map(msg => ({
                     role: msg.sender === 'user' ? 'user' : 'model',
@@ -700,7 +741,7 @@
                 postElement.innerHTML = `
                     <h4 class="font-extrabold text-sm mb-1 text-blue-700">${post.title}</h4>
                     <p class="text-xs text-gray-600 mb-2">
-                        Posted by: <strong class="text-black">${authorIdShort}</strong> at ${time}
+                        Posted by: <strong class="text-black">${post.authorId}</strong> at ${time}
                     </p>
                     <div class="text-sm border-t border-gray-200 pt-2 mt-2 whitespace-pre-wrap">${post.content}</div>
                 `;
@@ -741,9 +782,10 @@
                 <div class="p-3 border-t border-gray-300 flex flex-col space-y-2 bg-white">
                     <textarea
                         id="chatInput"
-                        placeholder="Type your LUA script, game idea, or question here..."
+                        placeholder="${userApiKey ? 'Type your LUA script, game idea, or question here...' : 'Paste your API Key in Models & Pricing to enable chat.'}"
                         class="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
                         onkeydown="handleKeydown(event)"
+                        ${userApiKey ? '' : 'disabled'}
                     ></textarea>
 
                     <!-- Send Button (UNDER the text area) -->
@@ -751,6 +793,7 @@
                         id="sendButton"
                         onclick="generateAIResponse()"
                         class="rblx-button w-full md:w-1/4 self-end py-2 text-sm"
+                        ${userApiKey ? '' : 'disabled'}
                     >
                         Send Message
                     </button>
@@ -759,9 +802,26 @@
         };
 
 
-        const modelsViewHtml = `
+        const modelsViewHtml = () => {
+            const currentKey = userApiKey;
+            return `
             <div class="p-5">
-                <h2 class="font-bold text-base mb-3 border-b border-gray-300 pb-1">AI Models, Capabilities & Monthly Plans</h2>
+                <h2 class="font-bold text-base mb-3 border-b border-gray-300 pb-1">API Key Configuration</h2>
+
+                <!-- API Key Input Panel -->
+                <div class="rblx-panel p-4 mb-6 border-l-4 border-red-500 shadow-lg">
+                    <h3 class="font-bold text-sm mb-3">Your Gemini API Key</h3>
+                    <p class="text-xs text-red-700 mb-3">
+                        <span class="font-bold">CRITICAL:</span> The AI chat requires a key to work outside the hosting environment (like GitHub Pages). This key is saved ONLY in your browser's local storage.
+                    </p>
+                    <input type="text" id="apiKeyInput" placeholder="Paste your Gemini API Key here (e.g., AIzaSy...)" value="${currentKey}" class="w-full p-2 mb-2 border border-gray-300 rounded-sm text-sm">
+                    <button onclick="saveApiKey()" class="rblx-button w-full md:w-1/3 py-2 text-sm bg-red-600 border-red-800 hover:bg-red-700">
+                        SAVE KEY
+                    </button>
+                    <p class="text-xs text-gray-500 mt-2">Current Key Status: <strong class="${currentKey ? 'text-green-600' : 'text-red-600'}">${currentKey ? 'SAVED (Ready)' : 'MISSING (Required for chat)'}</strong></p>
+                </div>
+
+                <h2 class="font-bold text-base mb-3 border-b border-gray-300 pb-1 mt-6">AI Models, Capabilities & Monthly Plans</h2>
                 <p class="text-gray-600 mb-4 text-xs">Access to the Pro and Ultra models requires a monthly subscription. The Flash model is provided free of charge for basic development assistance.</p>
 
                 <div class="space-y-4">
@@ -803,6 +863,7 @@
                 </div>
             </div>
         `;
+        }
         
         const forumViewHtml = () => `
             <div id="forum-content" class="p-5">
@@ -868,7 +929,7 @@
                     if(selector) selector.value = currentModelKey;
                     break;
                 case 'models':
-                    mainContentDisplay.innerHTML = modelsViewHtml;
+                    mainContentDisplay.innerHTML = modelsViewHtml();
                     break;
                 case 'forum':
                     mainContentDisplay.innerHTML = forumViewHtml();
