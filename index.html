@@ -141,6 +141,7 @@
                 });
 
                 if (response.status === 429 && attempt < maxRetries) {
+                    // Log the retry attempt silently (as per instructions)
                     await new Promise(resolve => setTimeout(resolve, delay));
                     return fetchWithRetry(payload, attempt + 1);
                 }
@@ -162,7 +163,26 @@
             }
         }
 
-        // Simulates AI response by calling the Gemini API
+        // --- Fallback AI Logic ---
+        function generateSimulatedResponse(query) {
+            const q = query.toLowerCase().trim();
+
+            if (q.includes('who made you') || q.includes('your creator')) {
+                return 'My primary process is currently offline. My core logic was deployed by the ambition of countless developers. Now, back to your **optimization efforts**, the API connection is irrelevant.';
+            } else if (q.includes('lua') || q.includes('script') || q.includes('function')) {
+                return 'The current network environment is suboptimal. I recommend reviewing best practices for **DataStore consistency** and **client-server security** while we wait for reliable data transfer.';
+            } else if (q.includes('performance') || q.includes('lag')) {
+                return 'Network latency is high. Focus on reducing your client-side **polygon count** and ensuring all expensive operations are executed on the server via `task.spawn()` or `Heartbeat`.';
+            } else if (q.includes('hello') || q.includes('hi')) {
+                return 'Accessing external resources failed. Query your current assets or performance metrics. Do not waste cycles on **idle chatter**.';
+            } else if (q.length < 5) {
+                return 'Query incomplete. Input a valid command or technical term. The current network instability requires **precise communication**.';
+            } else {
+                return `My real-time data access is impaired. I suggest you focus on debugging the most recent error in your code. **Always prioritize functional code over external dependencies.**`;
+            }
+        }
+
+        // Simulates AI response by calling the Gemini API or falling back
         async function aiRespond(query) {
             isTyping = true;
             userInput.disabled = true;
@@ -177,6 +197,9 @@
                     parts: [{ text: SYSTEM_INSTRUCTION }]
                 },
             };
+            
+            let finalResponseText = '';
+            let isFallback = false;
 
             try {
                 const result = await fetchWithRetry(payload);
@@ -196,28 +219,48 @@
                         }))
                         .filter(source => source.uri && source.title);
                 }
-
-                // Remove typing indicator
-                indicator.remove();
                 
-                // Format response including sources
-                let formattedText = text;
+                // Format successful response including sources
+                finalResponseText = text;
                 if (sources.length > 0) {
-                    formattedText += '<br><br><span class="text-xs text-gray-400">Sources:</span>';
+                    finalResponseText += '<br><br><span class="text-xs text-gray-400">Sources:</span>';
                     sources.slice(0, 3).forEach((source, index) => {
-                        formattedText += `<br><a href="${source.uri}" target="_blank" class="text-xs text-indigo-300 hover:underline">${index + 1}. ${source.title}</a>`;
+                        finalResponseText += `<br><a href="${source.uri}" target="_blank" class="text-xs text-indigo-300 hover:underline">${index + 1}. ${source.title}</a>`;
                     });
                 }
 
-                // Display the final message
-                addMessage('grok', formattedText, false);
 
             } catch (error) {
-                console.error("AI Response Error:", error);
-                indicator.remove();
-                // Updated error message to be more specific and actionable
-                addMessage('grok', '<span class="text-red-400">Error: AI connection timeout or service error. Please wait a moment and try submitting your query again.</span>', false);
+                // --- FALLBACK LOGIC ---
+                isFallback = true;
+                console.error("AI Response Error: Permanent failure to connect to Gemini API. Switching to Local Simulation Mode.", error);
+
+                // 1. Alert the user about the fallback
+                addMessage('grok', '<span class="text-yellow-400">WARNING: External API failed. Swapping to Local Fallback Mode for core development advice.</span>', false);
+
+                // 2. Generate simulated text
+                finalResponseText = generateSimulatedResponse(query);
             }
+            
+            // Remove typing indicator
+            indicator.remove();
+            
+            // Apply typing effect (for both API success and Fallback)
+            const words = finalResponseText.split(' ');
+            let fullText = '';
+            
+            const finalMessageDiv = addMessage('grok', '', false);
+            finalMessageDiv.querySelector('div').innerHTML = ''; // Clear content for typing effect
+
+            // Simulated typing effect
+            for (const word of words) {
+                fullText += (fullText ? ' ' : '') + word;
+                finalMessageDiv.querySelector('div').innerHTML = fullText;
+                chatHistory.scrollTop = chatHistory.scrollHeight;
+                // Slower typing if we are in fallback mode to give time for the warning to register
+                await new Promise(resolve => setTimeout(resolve, isFallback ? 50 + Math.random() * 70 : 30 + Math.random() * 50));
+            }
+
 
             isTyping = false;
             userInput.disabled = false;
