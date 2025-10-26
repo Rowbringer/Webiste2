@@ -156,8 +156,9 @@
                     await new Promise(resolve => setTimeout(resolve, delay));
                     return fetchWithRetry(payload, attempt + 1);
                 }
-                console.error("Gemini API call failed after multiple retries:", error);
-                throw error;
+                console.error("Gemini API call failed after multiple retries. Network or permanent API error:", error);
+                // Throw an error with a clear message indicating final failure
+                throw new Error(`Failed to connect to AI after ${maxRetries} attempts.`);
             }
         }
 
@@ -214,7 +215,8 @@
             } catch (error) {
                 console.error("AI Response Error:", error);
                 indicator.remove();
-                addMessage('grok', '<span class="text-red-400">Error: Unable to connect to the AI model. Try again. (Check console for details).</span>', false);
+                // Updated error message to be more specific and actionable
+                addMessage('grok', '<span class="text-red-400">Error: AI connection timeout or service error. Please wait a moment and try submitting your query again.</span>', false);
             }
 
             isTyping = false;
