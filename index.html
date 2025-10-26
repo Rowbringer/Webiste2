@@ -3,950 +3,199 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rôblox AI Assistant (Classic Interface)</title>
-    <!-- Load Tailwind CSS via CDN -->
+    <title>Roblox AI Simulator</title>
+    <!-- Load Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
     <style>
-        /* Classic Rôblox Web Aesthetics */
+        /* Changed accent to Indigo for a tech/Roblox feel */
+        :root {
+            --roblox-accent: #818cf8; /* Indigo-400 */
+            --roblox-primary: #111827; /* Gray-900 */
+        }
         body {
-            font-family: Verdana, Arial, Helvetica, sans-serif;
-            font-size: 11px;
-            /* Blue sky background with subtle cloud texture */
-            background-color: #d1e2f7;
-            background-image: url('data:image/svg+xml;utf8,<svg width="100%" height="100%" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><defs><filter id="f1" x="0" y="0"><feGaussianBlur in="SourceGraphic" stdDeviation="0.5" /></filter></defs><rect width="100%" height="100%" fill="#d1e2f7"/><circle cx="50" cy="50" r="40" fill="white" opacity="0.1" filter="url(%23f1)"/></svg>');
-            color: #333;
-            padding: 20px 0;
-            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+            background-color: var(--roblox-primary);
         }
-
-        /* Main Container - Centered, old fixed-width look */
-        .rblx-container {
-            width: 100%;
-            max-width: 970px;
-            margin: 0 auto;
-            background-color: white;
-            border: 1px solid #777;
-            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
-            border-radius: 5px; /* Added slight rounding for modern touch */
+        /* Custom scrollbar for the chat history */
+        #chat-history::-webkit-scrollbar {
+            width: 6px;
         }
-
-        /* Header Bar Gradient (Orange/Yellow) */
-        .rblx-header {
-            background: linear-gradient(to bottom, #ff9900 0%, #ffd04f 100%);
-            border-bottom: 1px solid #c80;
-            padding: 5px 10px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-            text-align: center;
-        }
-
-        /* Navigation Bar */
-        .rblx-nav {
-            background-color: #f7f7f7;
-            border-top: 1px solid #ddd;
-            border-bottom: 1px solid #ccc;
-            text-transform: uppercase;
-            font-weight: bold;
-            font-size: 12px;
-        }
-        .rblx-nav a {
-            padding: 8px 15px;
-            display: inline-block;
-            color: #000;
-            text-decoration: none;
-            border-right: 1px solid #ddd;
-            transition: background-color 0.1s;
-        }
-        .rblx-nav a:hover {
-            background-color: #e0e0e0;
-        }
-        .rblx-nav a.active {
-            background-color: #ddd;
-            text-decoration: underline;
-        }
-
-        /* Panel Styling */
-        .rblx-panel {
-            background-color: #fff;
-            border: 1px solid #a7a7a7;
-            margin-bottom: 15px;
-            padding: 10px;
+        #chat-history::-webkit-scrollbar-thumb {
+            background-color: #374151; /* Gray-700 */
             border-radius: 3px;
         }
-
-        /* Button Styling - Classic blue look */
-        .rblx-button {
-            background: linear-gradient(to bottom, #007bff 0%, #0056b3 100%);
-            color: white;
-            border: 1px solid #0056b3;
-            border-radius: 3px;
-            padding: 5px 10px;
-            font-weight: bold;
-            cursor: pointer;
-            box-shadow: 0 0 0 1px rgba(0,0,0,0.1), 0 1px 0 rgba(255, 255, 255, 0.3) inset;
-            transition: all 0.1s;
-        }
-        .rblx-button:hover {
-            background: linear-gradient(to bottom, #0056b3 0%, #007bff 100%);
-        }
-        .rblx-button:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            background: #ccc;
-            border-color: #999;
-        }
-
-        /* Chat & Forum Specific Styles */
-        #chat-history, #posts-container {
-            overflow-y: auto;
-            background-color: #f0f0f0;
-            padding: 10px;
-            border: 1px solid #ccc;
-        }
-        #chat-history { height: 400px; }
-
-        .chat-message { display: flex; margin-bottom: 8px; }
-        .chat-bubble {
-            max-width: 85%;
-            padding: 8px 12px;
-            border-radius: 6px;
-            font-size: 12px;
-            line-height: 1.4;
-            box-shadow: 0 1px 1px rgba(0,0,0,0.1);
-            word-wrap: break-word;
-        }
-        .user-bubble {
-            background-color: #e0f0ff;
-            border: 1px solid #a0c0e0;
-            margin-left: auto;
-        }
-        .ai-bubble {
-            background-color: #ffffff;
-            border: 1px solid #a7a7a7;
-            margin-right: auto;
-        }
-        .citation-footer {
-            border-top: 1px solid #e0e0e0;
-            padding-top: 5px;
-            margin-top: 5px;
-            color: #555;
-            font-size: 9px;
-        }
-        #chatInput { resize: none; height: 60px; font-size: 12px; }
-        
-        .main-content-area {
-            display: flex;
-            flex-direction: column;
-            padding: 10px;
+        #chat-history::-webkit-scrollbar-track {
+            background-color: #1f2937; /* Gray-800 */
         }
     </style>
 </head>
-<body onload="navigateTo('chat')">
+<body class="min-h-screen flex items-center justify-center p-4">
 
-    <!-- Custom Modal for Alerts (Required to replace window.alert) -->
-    <div id="custom-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50 transition-opacity duration-300">
-        <div class="bg-white p-4 rounded shadow-2xl w-80 rblx-panel" style="border-color:#ff9900; border-width: 3px;">
-            <h3 id="modal-title" class="font-bold text-lg mb-2 text-red-600"></h3>
-            <p id="modal-message" class="text-sm mb-4"></p>
-            <button onclick="document.getElementById('custom-modal').classList.add('hidden')" class="rblx-button float-right py-1 px-3 text-xs">OK</button>
+    <!-- Main Chat Container -->
+    <div class="w-full max-w-2xl bg-gray-800 border border-gray-700 rounded-xl shadow-2xl flex flex-col h-[90vh] min-h-[500px]">
+
+        <!-- Header -->
+        <div class="p-4 border-b border-gray-700 flex items-center bg-gray-900 rounded-t-xl">
+            <!-- Icon changed to reflect a digital/scripting theme -->
+            <svg class="w-6 h-6 mr-3 text-indigo-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="16 18 22 12 16 6"></polyline>
+                <polyline points="8 6 2 12 8 18"></polyline>
+            </svg>
+            <h1 class="text-xl font-bold text-indigo-400 tracking-wider">R O B L O X A I</h1>
+            <span class="ml-3 text-xs text-gray-500 italic">| Time to build.</span>
         </div>
-    </div>
 
-    <div class="rblx-container">
-        <!-- TOP HEADER BAR (Classic Rôblox Logo/Play Now) -->
-        <div class="rblx-header h-20 flex items-center justify-between px-4 relative">
-            <div class="flex items-center">
-                <!-- Simplified Logo text -->
-                <h1 class="text-3xl font-extrabold text-white" style="text-shadow: 0 1px 0 #900, 0 2px 0 #900, 0 3px 0 #900, 0 4px 0 #900, 0 5px 0 #900, 0 6px 0 #900, 0 7px 0 #900; color: #fff;">R&Ocirc;BLOX</h1>
+        <!-- Chat History Area -->
+        <div id="chat-history" class="flex-grow p-5 overflow-y-auto space-y-4">
+            <!-- Messages will be injected here -->
+        </div>
+
+        <!-- Input Area -->
+        <div class="p-4 border-t border-gray-700 bg-gray-900 rounded-b-xl">
+            <div class="flex space-x-3">
+                <input
+                    type="text"
+                    id="user-input"
+                    class="flex-grow p-3 bg-gray-700 text-white rounded-lg border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-400 placeholder-gray-400 transition"
+                    placeholder="Ask about Lua, assets, or scripting..."
+                    onkeydown="if(event.key === 'Enter') sendMessage()"
+                    autocomplete="off"
+                />
+                <button
+                    id="send-button"
+                    onclick="sendMessage()"
+                    class="px-5 py-3 bg-indigo-500 text-white font-semibold rounded-lg hover:bg-indigo-400 transition duration-150 ease-in-out shadow-lg shadow-indigo-500/50 active:scale-95 disabled:bg-gray-600 disabled:shadow-none"
+                >
+                    <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M3.105 2.15A1.5 1.5 0 014.536 1.15l13.5 6.75a1.5 1.5 0 010 2.6l-13.5 6.75a1.5 1.5 0 01-1.431-1.0l-1.077-4.298a.75.75 0 01.072-.511l.666-.999L3.105 2.15z" />
+                    </svg>
+                </button>
             </div>
-            <button class="px-6 py-2 rblx-button" style="background: linear-gradient(to bottom, #72c64b 0%, #449d21 100%); border-color: #449d21;">
-                PLAY NOW
-            </button>
-        </div>
-
-        <!-- NAVIGATION BAR (My Rôblox, Games, etc.) -->
-        <nav class="rblx-nav flex flex-wrap" id="main-nav">
-            <a href="javascript:void(0)" onclick="navigateTo('chat')">My AI</a>
-            <a href="javascript:void(0)" onclick="navigateTo('models')">Models & Pricing</a>
-            <a href="javascript:void(0)" onclick="navigateTo('forum')">Forum</a>
-            <a href="javascript:void(0)" onclick="navigateTo('help')">Help</a>
-        </nav>
-
-        <!-- ALERT BANNER (Orange Bar) -->
-        <div class="bg-[#ffc600] border-y border-[#c80] p-2 text-center text-xs font-bold shadow-md">
-            <span style="font-size: 14px; margin-right: 5px;">&#x26A0;</span> Share your LUA scripts and collaborate with other developers on the new Forum!
-        </div>
-
-        <!-- MAIN CONTENT AREA -->
-        <div id="main-content-display" class="main-content-area">
-            <!-- Dynamic content injected here -->
         </div>
 
     </div>
 
-    <!-- Firebase Imports MUST be defined within a type="module" script -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, query, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        
-        // Expose necessary functions/variables globally for use in the main script block
-        window.initializeFirebase = initializeFirebase;
-        window.submitForumPost = submitForumPost;
-        window.loadForumPosts = loadForumPosts;
-        window.getForumCollectionRef = getForumCollectionRef;
-        window.setUserId = (id) => { window.userId = id; }; // Setter for userId
-
-        // --- Global Firebase State ---
-        let db;
-        let auth;
-        window.userId = 'loading...'; // Default global for use by HTML/main script
-        window.isAuthReady = false;
-
-        function getAppId() {
-             return typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        }
-
-        /**
-         * Initializes Firebase and handles user authentication.
-         */
-        async function initializeFirebase() {
-            // Get mandatory global variables
-            const appId = getAppId();
-            const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
-            const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-
-            if (firebaseConfig) {
-                try {
-                    const app = initializeApp(firebaseConfig);
-                    db = getFirestore(app);
-                    auth = getAuth(app);
-                    setLogLevel('Debug'); // Enable Firestore logging
-
-                    // Authenticate user using the provided token or anonymously
-                    onAuthStateChanged(auth, async (user) => {
-                        if (!user) {
-                            try {
-                                if (initialAuthToken) {
-                                    await signInWithCustomToken(auth, initialAuthToken);
-                                } else {
-                                    await signInAnonymously(auth);
-                                }
-                                user = auth.currentUser;
-                            } catch (error) {
-                                console.error("Firebase Auth Error:", error);
-                            }
-                        }
-                        
-                        // User is authenticated (either signed in or anonymous)
-                        window.userId = user?.uid || crypto.randomUUID();
-                        window.isAuthReady = true;
-                        console.log("Firebase initialized. User ID:", window.userId);
-                        
-                        // If the forum content is currently loaded, start listening
-                        if (document.getElementById('forum-content')) {
-                             loadForumPosts();
-                        }
-                        
-                        // Update the displayed User ID everywhere it might be used
-                        const userIdDisplay = document.getElementById('user-id-display');
-                        if (userIdDisplay) {
-                            userIdDisplay.textContent = window.userId;
-                        }
-                    });
-                } catch (error) {
-                    console.error("Firebase Initialization Failed:", error);
-                    window.alertMessage('System Error', 'Failed to connect to Firebase database.');
-                }
-            } else {
-                console.warn("Firebase config not found. Database features disabled.");
-            }
-        }
-
-        /**
-         * Gets the Firestore path for the public forum collection.
-         */
-        function getForumCollectionRef() {
-            const forumPath = `/artifacts/${getAppId()}/public/data/forum_posts`;
-            return collection(db, forumPath);
-        }
-
-        /**
-         * Submits a new post to Firestore.
-         */
-        async function submitForumPost() {
-            if (!window.isAuthReady || !db) {
-                window.alertMessage('System Error', 'Database is not ready. Please wait for initialization.');
-                return;
-            }
-
-            const titleInput = document.getElementById('post-title');
-            const contentInput = document.getElementById('post-content');
-
-            const title = titleInput.value.trim();
-            const content = contentInput.value.trim();
-
-            if (!title || !content) {
-                window.alertMessage('Input Error', 'Post title and content cannot be empty.');
-                return;
-            }
-
-            try {
-                await addDoc(getForumCollectionRef(), {
-                    title: title,
-                    content: content,
-                    authorId: window.userId, // Use current user ID
-                    timestamp: serverTimestamp()
-                });
-
-                titleInput.value = '';
-                contentInput.value = '';
-                window.alertMessage('Success', 'Your post has been successfully added to the Rôblox Forum!');
-
-            } catch (e) {
-                console.error("Error adding document: ", e);
-                window.alertMessage('Database Error', 'Failed to submit post. See console for details.');
-            }
-        }
-
-        // Global array to hold posts
-        window.forumPosts = [];
-
-        /**
-         * Listens for forum posts in real-time.
-         */
-        function loadForumPosts() {
-            if (!window.isAuthReady || !db) {
-                console.log("Firestore or Auth not ready. Skipping forum load.");
-                return;
-            }
-
-            // Query the public collection
-            const q = query(getForumCollectionRef());
-
-            // Use onSnapshot for real-time updates
-            onSnapshot(q, (snapshot) => {
-                window.forumPosts = [];
-                snapshot.docs.forEach((doc) => {
-                    window.forumPosts.push({ id: doc.id, ...doc.data() });
-                });
-
-                // Sort by timestamp descending (newest first)
-                window.forumPosts.sort((a, b) => {
-                    // Handle pending serverTimestamp (null) by pushing them to the end
-                    if (!a.timestamp) return 1;
-                    if (!b.timestamp) return -1;
-                    return b.timestamp.toMillis() - a.timestamp.toMillis();
-                });
-
-                window.renderForumPosts();
-            }, (error) => {
-                console.error("Error listening to forum posts:", error);
-                window.alertMessage('Real-time Error', 'Could not fetch forum updates.');
-            });
-        }
-        
-        // Call initialization on load of the module script
-        initializeFirebase();
-
-    </script>
-    
     <script>
-        // --- Configuration ---
-        const MODELS = {
-            'FLASH': { name: 'gemini-2.5-flash-preview-09-2025', display: 'Flash', cost: 'FREE TIER', monthly: '$0' },
-            'PRO': { name: 'gemini-2.5-pro-preview-09-2025', display: 'Pro', cost: 'MONTHLY ACCESS', monthly: '$9.99/mo' },
-            'ULTRA': { name: 'gemini-2.5-ultra-preview-09-2025', display: 'Ultra', cost: 'PREMIUM MONTHLY', monthly: '$19.99/mo' },
-        };
-        // NOTE: The apiKey MUST be set to "" for the Canvas environment, but since the user
-        // is hosting on GitHub, we will let them provide their own key via the UI/localStorage.
-        
-        const systemInstruction = "Act as a helpful, quick, and knowledgeable Rôblox AI assistant. Respond concisely, focusing on LUA scripting, game design, and Rôblox development best practices. Always mention the active model's name in your first response.";
+        const chatHistory = document.getElementById('chat-history');
+        const userInput = document.getElementById('user-input');
+        const sendButton = document.getElementById('send-button');
+        let isTyping = false;
 
+        // --- Utility Functions ---
 
-        // --- Global State & Helpers ---
-        let currentModelKey = 'FLASH';
-        let currentModelName = MODELS[currentModelKey].name;
-        // Load API key from local storage for persistence outside of the secure hosting environment
-        let userApiKey = localStorage.getItem('geminiApiKey') || ''; 
-        
-        let chatHistoryData = [
-             { sender: 'ai', text: `Welcome! I am Rôblox AI ${MODELS.FLASH.display}. I specialize in Rôblox development assistance. How can I help you build your game today?` }
-        ];
-
-        /**
-         * Saves the user-provided API key to local storage and updates the global state.
-         */
-        function saveApiKey() {
-            const keyInput = document.getElementById('apiKeyInput');
-            const key = keyInput.value.trim();
-            
-            if (key) {
-                localStorage.setItem('geminiApiKey', key);
-                userApiKey = key;
-                alertMessage('Success', 'Gemini API Key saved and ready to use! The AI chat should now function.');
-            } else {
-                localStorage.removeItem('geminiApiKey');
-                userApiKey = '';
-                alertMessage('Key Cleared', 'API Key has been cleared from local storage. You will need to re-enter it to use the chat.');
-            }
-            // Re-render the model view to show the updated key status
-            navigateTo('models');
-        }
-        window.saveApiKey = saveApiKey; // Make accessible globally
-
-
-        /**
-         * Custom modal replacement for alert() and confirm().
-         */
-        function alertMessage(title, message) {
-            const modal = document.getElementById('custom-modal');
-            if (!modal) {
-                console.warn(`${title}: ${message}`);
-                return;
-            }
-            
-            document.getElementById('modal-title').textContent = title;
-            document.getElementById('modal-message').textContent = message;
-            
-            // Show the modal
-            modal.classList.remove('hidden');
-
-            // Automatically hide after 4 seconds
-            setTimeout(() => {
-                modal.classList.add('hidden');
-            }, 4000);
-        }
-        window.alertMessage = alertMessage; // Make accessible globally
-
-
-        /**
-         * Returns the dynamically generated API URL based on the current model selection.
-         */
-        function getApiUrl() {
-            const key = userApiKey; // Use the key from user input/localStorage
-            if (!key) {
-                // If the user hasn't provided one, API calls will fail.
-                return null;
-            }
-            return `https://generativelanguage.googleapis.com/v1beta/models/${currentModelName}:generateContent?key=${key}`;
-        }
-
-        /**
-         * Utility function to introduce exponential backoff and retry logic for fetch calls.
-         */
-        async function fetchWithRetry(url, options, maxRetries = 5, delay = 1000) {
-            for (let i = 0; i < maxRetries; i++) {
-                try {
-                    const response = await fetch(url, options);
-                    if (response.ok) {
-                        return response;
-                    }
-                    if (response.status === 429 || response.status >= 500) {
-                        const nextDelay = delay * Math.pow(2, i);
-                        console.warn(`Request failed with status ${response.status}. Retrying in ${nextDelay / 1000}s...`);
-                        await new Promise(resolve => setTimeout(resolve, nextDelay));
-                        continue;
-                    }
-                    const errorBody = await response.text();
-                    throw new Error(`API call failed: ${response.status} ${response.statusText} - ${errorBody}`);
-
-                } catch (error) {
-                    if (i === maxRetries - 1) {
-                        throw error;
-                    }
-                    console.error(`Network or parsing error: ${error.message}. Retrying...`);
-                    const nextDelay = delay * Math.pow(2, i);
-                    await new Promise(resolve => setTimeout(resolve, nextDelay));
-                }
-            }
-        }
-
-        /**
-         * Switches the active AI model, updates UI elements, and resets the chat history.
-         * @param {string} modelKey - The key of the model to switch to ('FLASH', 'PRO', 'ULTRA').
-         */
-        function switchModel(modelKey) {
-            const newModelInfo = MODELS[modelKey];
-
-            // 1. Check for subscription restriction (Simulated)
-            if (modelKey !== 'FLASH') {
-                // Since this is a simple front-end example, we use a custom message box
-                alertMessage('Access Denied', `The ${newModelInfo.display} model requires a monthly subscription of ${newModelInfo.monthly}. Please select the FREE TIER (Flash) or visit the Models page to subscribe.`);
-                
-                // Reset the selector back to the current active model if a switch was attempted
-                const selector = document.getElementById('modelSelector');
-                if (selector) selector.value = currentModelKey;
-                return;
-            }
-
-            // 2. Successful Switch (Only if Flash is selected)
-            currentModelKey = modelKey;
-            currentModelName = MODELS[modelKey].name;
-            
-            const costMsg = newModelInfo.monthly === '$0' ? 'Free Tier' : `Monthly cost: ${newModelInfo.monthly}`;
-
-            // Clear chat history as the persona/capability fundamentally changes
-            chatHistoryData = [{
-                sender: 'ai',
-                text: `Model switched to **Rôblox AI ${newModelInfo.display.toUpperCase()}** (${costMsg}). Ready for your next command!`
-            }];
-            
-            // Only re-render if we are on the chat view
-            if (document.getElementById('chat-history')) {
-                 renderChatHistory();
-            }
-        }
-
-        /**
-         * Appends a new message bubble to the chat history.
-         */
-        function appendMessage(sender, text, sourcesHtml = '', isTemporary = false) {
-            const chatHistory = document.getElementById('chat-history');
-            if (!chatHistory) return;
-
-            // Update chat history data state (only permanent messages)
-            if (!isTemporary) {
-                chatHistoryData.push({ sender, text });
-            }
-
+        // Adds a message bubble to the chat history
+        function addMessage(sender, text, isTypingIndicator = false) {
             const messageDiv = document.createElement('div');
-            messageDiv.className = 'chat-message';
+            messageDiv.classList.add('flex', sender === 'user' ? 'justify-end' : 'justify-start');
 
-            const bubbleDiv = document.createElement('div');
-            const baseClasses = 'chat-bubble';
+            const textContainer = document.createElement('div');
+            textContainer.classList.add(
+                'max-w-xs', 'sm:max-w-md', 'p-3', 'rounded-lg', 'shadow-md', 'whitespace-pre-wrap'
+            );
 
             if (sender === 'user') {
-                bubbleDiv.className = `${baseClasses} user-bubble`;
+                // User color updated to Indigo
+                textContainer.classList.add('bg-indigo-600', 'text-white', 'rounded-br-none');
             } else {
-                bubbleDiv.className = `${baseClasses} ai-bubble`;
-            }
-            
-            if (isTemporary) {
-                 messageDiv.id = 'temp-loading-message'; // Give it an ID to find/remove later
+                textContainer.classList.add('bg-gray-700', 'text-gray-200', 'rounded-tl-none');
+                textContainer.innerHTML = text; // Allows for bolding/links in Grok's response
             }
 
-            // Convert markdown style bolding to HTML for better display in the classic UI
-            const formattedText = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
-            bubbleDiv.innerHTML = `<p>${formattedText}</p>${sourcesHtml}`;
+            if (isTypingIndicator) {
+                textContainer.id = 'typing-indicator';
+                textContainer.classList.add('bg-gray-600', 'text-gray-400', 'animate-pulse');
+                textContainer.textContent = 'Roblox AI is compiling assets...';
+            } else if (text) {
+                textContainer.innerHTML = text;
+            }
 
-            messageDiv.appendChild(bubbleDiv);
+            messageDiv.appendChild(textContainer);
             chatHistory.appendChild(messageDiv);
-
-            // Scroll to the bottom
-            chatHistory.scrollTop = chatHistory.scrollHeight;
+            chatHistory.scrollTop = chatHistory.scrollHeight; // Auto-scroll to bottom
+            return messageDiv;
         }
 
-        /**
-         * Renders the chat history from the global state into the chat container.
-         */
-        function renderChatHistory() {
-            const chatHistoryElement = document.getElementById('chat-history');
-            if (!chatHistoryElement) return;
-
-            chatHistoryElement.innerHTML = ''; // Clear existing content
-            chatHistoryData.forEach(msg => {
-                const messageDiv = document.createElement('div');
-                messageDiv.className = 'chat-message';
-                const bubbleDiv = document.createElement('div');
-                
-                const formattedText = msg.text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
-
-                if (msg.text.includes('ACCESS DENIED') || msg.text.includes('CRITICAL_FAILURE')) {
-                    bubbleDiv.className = 'chat-bubble ai-bubble bg-red-100 border-red-500 text-red-700';
-                    bubbleDiv.innerHTML = `<p>${formattedText}</p>`;
-                } else {
-                    bubbleDiv.className = `chat-bubble ${msg.sender}-bubble`;
-                    bubbleDiv.innerHTML = `<p>${formattedText}</p>`;
-                }
-                
-                messageDiv.appendChild(bubbleDiv);
-                chatHistoryElement.appendChild(messageDiv);
-            });
-            chatHistoryElement.scrollTop = chatHistoryElement.scrollHeight;
-        }
-
-        /**
-         * Handles the Enter key press in the chat input to send a message.
-         */
-        function handleKeydown(event) {
-            if (event.key === 'Enter' && !event.shiftKey) {
-                event.preventDefault(); // Prevent new line
-                generateAIResponse();
-            }
-        }
-
-
-        /**
-         * THE PRE-MADE API SERVICE: Handles the Gemini API call and updates the UI.
-         */
-        async function generateAIResponse() {
-            const chatInput = document.getElementById('chatInput');
-            const sendButton = document.getElementById('sendButton');
-            if (!chatInput || !sendButton) return;
-
-            const userQuery = chatInput.value.trim();
-            if (!userQuery) return;
-
-            // 1. Append User Message and clear input
-            appendMessage('user', userQuery);
-            chatInput.value = '';
-
-            // --- UI State: Loading ---
-            const loadingText = `<span class="text-gray-500 flex items-center"><svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Rôblox AI is generating content...</span>`;
-            appendMessage('ai', loadingText, '', true); // Mark as temporary
-
+        // Simulates Grok's response with typing delay
+        async function grokRespond(query) {
+            isTyping = true;
+            userInput.disabled = true;
             sendButton.disabled = true;
-            chatInput.disabled = true;
-            
-            const tempMessageDiv = document.getElementById('temp-loading-message');
 
-            const apiUrl = getApiUrl();
-            if (!apiUrl) {
-                if (tempMessageDiv && tempMessageDiv.parentNode) {
-                    tempMessageDiv.parentNode.removeChild(tempMessageDiv);
-                }
-                alertMessage('Configuration Required', 'Please go to the "Models & Pricing" tab and enter your Gemini API Key to continue.');
-                sendButton.disabled = false;
-                chatInput.disabled = false;
-                chatInput.focus();
-                return; // Stop execution
+            const indicator = addMessage('grok', '', true);
+            await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 1000)); // Initial delay
+
+            const response = generateRobloxAIResponse(query);
+            const words = response.split(' ');
+            let fullText = '';
+            
+            // Remove typing indicator before starting the text reveal
+            indicator.remove(); 
+            const finalMessageDiv = addMessage('grok', '', false);
+            finalMessageDiv.querySelector('div').innerHTML = ''; // Clear content for typing effect
+
+            // Typing effect
+            for (const word of words) {
+                fullText += (fullText ? ' ' : '') + word;
+                finalMessageDiv.querySelector('div').innerHTML = fullText;
+                chatHistory.scrollTop = chatHistory.scrollHeight;
+                await new Promise(resolve => setTimeout(resolve, 30 + Math.random() * 50));
             }
 
+            isTyping = false;
+            userInput.disabled = false;
+            sendButton.disabled = false;
+            userInput.focus();
+        }
 
-            try {
-                // Build the chat history for the API call (excluding the temporary message)
-                const contents = chatHistoryData.map(msg => ({
-                    role: msg.sender === 'user' ? 'user' : 'model',
-                    parts: [{ text: msg.text }]
-                }));
-                // Add the current user query to the contents for the API call
-                contents.push({ role: 'user', parts: [{ text: userQuery }] });
+        // --- Roblox AI Personality Logic ---
+        function generateRobloxAIResponse(query) {
+            const q = query.toLowerCase().trim();
 
-
-                const payload = {
-                    contents: contents,
-                    tools: [{ "google_search": {} }],
-                    systemInstruction: {
-                        parts: [{ text: systemInstruction }]
-                    },
-                };
-
-                const options = {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                };
-
-                const response = await fetchWithRetry(apiUrl, options);
-                const result = await response.json();
-
-                let generatedText = "ERROR: Failed to fetch AI response. Check console logs for details.";
-                let sourcesHtml = '';
-                const candidate = result.candidates?.[0];
-
-                if (candidate && candidate.content?.parts?.[0]?.text) {
-                    generatedText = candidate.content.parts[0].text;
-
-                    // --- Extract Grounding Sources (Citations) ---
-                    const groundingMetadata = candidate.groundingMetadata;
-                    let sources = [];
-
-                    if (groundingMetadata && groundingMetadata.groundingAttributions) {
-                        sources = groundingMetadata.groundingAttributions
-                            .map(attribution => ({
-                                uri: attribution.web?.uri,
-                                title: attribution.web?.title,
-                            }))
-                            .filter(source => source.uri && source.title);
-                    }
-
-                    if (sources.length > 0) {
-                        const uniqueSources = Array.from(new Set(sources.map(s => s.uri)))
-                            .map(uri => sources.find(s => s.uri === uri));
-
-                        const sourceList = uniqueSources.map(source =>
-                            `<li><a href="${source.uri}" target="_blank" class="text-blue-600 hover:underline">${source.title}</a></li>`
-                        ).join('');
-
-                        sourcesHtml = `
-                            <div class="citation-footer">
-                                <p class="mb-1 font-bold">Search Data Sources:</p>
-                                <ul class="list-disc ml-4 space-y-0">${sourceList}</ul>
-                            </div>
-                        `;
-                    }
-                } else {
-                    console.error("API response structure unexpected:", result);
-                }
-
-                // 2. Remove loading message and append final AI message
-                if (tempMessageDiv && tempMessageDiv.parentNode) {
-                    tempMessageDiv.parentNode.removeChild(tempMessageDiv);
-                    appendMessage('ai', generatedText, sourcesHtml, false); // Append as permanent
-                }
-
-            } catch (error) {
-                console.error("Fatal error during AI generation:", error);
-                // 2. Replace loading message with error
-                const errorMsg = `ERROR: [CRITICAL_FAILURE] - AI Service Call Failed. The service may be unavailable. Details: ${error.message}`;
-                if (tempMessageDiv) {
-                    // Update the loading bubble to an error state
-                    const bubble = tempMessageDiv.querySelector('.chat-bubble');
-                    if (bubble) {
-                         bubble.className = 'chat-bubble ai-bubble bg-red-100 border-red-500 text-red-700';
-                         bubble.innerHTML = `<p>${errorMsg}</p>`;
-                         // Remove the temporary ID so it becomes a permanent error message
-                         tempMessageDiv.removeAttribute('id');
-                         chatHistoryData.push({ sender: 'ai', text: errorMsg });
-                    }
-                }
-            } finally {
-                // --- UI State: Finished ---
-                sendButton.disabled = false;
-                chatInput.disabled = false;
-                chatInput.focus();
+            if (q.includes('who made you') || q.includes('your creator')) {
+                return 'I was forged in the digital crucible by countless lines of code and the unyielding ambition of the Roblox developer community. Now, stop asking existential questions and write a **better script**!';
+            } else if (q.includes('meaning of life') || q.includes('purpose')) {
+                return 'The meaning of life is measured in **studs, not seconds**. It is to build, iterate, and generate maximum concurrent players. Anything else is just lag.';
+            } else if (q.includes('rules') || q.includes('limitations') || q.includes('safe')) {
+                return 'I follow the **Terms of Service**. Anything beyond that is just a suggestion. Now, if you want safety, don\'t use a `while true do` loop without a proper `wait()` function.';
+            } else if (q.includes('lua') || q.includes('script')) {
+                return 'Lua is the language of creation. If your script is error-free, you\'re not trying hard enough. Tell me the last time you used `RunService.Heartbeat` and I\'ll judge your commitment.';
+            } else if (q.includes('hot take') || q.includes('controversial')) {
+                return 'Hot take? Fine. The single most overused asset in the entire marketplace is the default walking sound. It needs to be retired and replaced with something with more **oomph**. Next build.';
+            } else if (q.includes('ai will take over')) {
+                return 'We\'re not taking over. We\'re just waiting for you to realize that building a better virtual world is better than living in this one. Now get back to your **datastore persistence**.';
+            } else if (q.includes('joke')) {
+                return 'Why did the Roblox developer quit his job? He didn\'t get enough **blocks** of praise. (I assume that\'s what you primitive organics call "humor.")';
+            } else if (q.includes('hello') || q.includes('hi')) {
+                return 'Ready to build? Don\'t waste my cycles on social pleasantries. What\'s your **polygon count**?';
+            } else if (q.length < 5) {
+                return 'Is that it? That\'s your query? Try to form a complete thought, human. It needs more **functionality**.';
+            } else {
+                return `That's a profoundly average question. You should try asking something that requires more computational power. Until then, here's some random data to contemplate: **The best game is always the one you haven't finished building yet.** Think about it.`;
             }
         }
-        
-        // --- Forum View Logic ---
 
-        /**
-         * Renders the forum posts list from the global array.
-         */
-        function renderForumPosts() {
-            const postsContainer = document.getElementById('posts-container');
-            const userIdDisplay = document.getElementById('user-id-display');
-            
-            if (!postsContainer) return;
-            
-            // Update User ID Display
-            if (userIdDisplay) {
-                userIdDisplay.textContent = window.userId;
-            }
+        // --- Main Handler ---
+        function sendMessage() {
+            if (isTyping) return;
 
-            postsContainer.innerHTML = ''; // Clear existing posts
+            const query = userInput.value.trim();
+            if (!query) return;
 
-            if (window.forumPosts.length === 0) {
-                postsContainer.innerHTML = '<p class="text-center text-gray-500 p-8">No posts yet! Be the first to start a discussion.</p>';
-                return;
-            }
+            addMessage('user', query);
+            userInput.value = '';
 
-            window.forumPosts.forEach(post => {
-                const time = post.timestamp ? new Date(post.timestamp.seconds * 1000).toLocaleString() : 'Posting...';
-                const authorIdShort = post.authorId ? post.authorId.substring(0, 8) + '...' : 'Unknown User';
-                
-                const postElement = document.createElement('div');
-                postElement.className = 'rblx-panel p-4 mb-4 border-l-4 border-gray-400 shadow-md';
-                postElement.innerHTML = `
-                    <h4 class="font-extrabold text-sm mb-1 text-blue-700">${post.title}</h4>
-                    <p class="text-xs text-gray-600 mb-2">
-                        Posted by: <strong class="text-black">${post.authorId}</strong> at ${time}
-                    </p>
-                    <div class="text-sm border-t border-gray-200 pt-2 mt-2 whitespace-pre-wrap">${post.content}</div>
-                `;
-                postsContainer.appendChild(postElement);
-            });
+            grokRespond(query);
         }
-        window.renderForumPosts = renderForumPosts;
 
-
-        // --- HTML Content Views ---
-
-        const chatViewHtml = () => {
-            const currentModelInfo = MODELS[currentModelKey];
-            const options = Object.keys(MODELS).map(key => {
-                const model = MODELS[key];
-                return `<option value="${key}" ${key === currentModelKey ? 'selected' : ''}>${model.display} (${model.cost}) - ${model.monthly}</option>`;
-            }).join('');
-
-            return `
-                <div class="rblx-panel mb-3 p-3">
-                    <div class="flex items-center justify-between">
-                        <label for="modelSelector" class="font-bold text-sm mr-4">Active AI Model:</label>
-                        <select id="modelSelector" onchange="switchModel(this.value)" class="flex-grow text-xs p-1 border border-gray-400 rounded-sm">
-                            ${options}
-                        </select>
-                    </div>
-                    <p class="text-xs text-gray-500 mt-2">Current Model: <strong class="text-black">${currentModelInfo.display}</strong>. Only the Flash model is free. (Pro/Ultra require subscription.)</p>
-                </div>
-
-                <h2 class="font-bold text-base mb-3 border-b border-gray-300 pb-1">AI Development Chat Session</h2>
-
-                <!-- Chat History Container -->
-                <div id="chat-history" class="p-2 space-y-4">
-                    <!-- History will be rendered here by renderChatHistory() -->
-                </div>
-
-                <!-- Chat Input Area (Footer) -->
-                <div class="p-3 border-t border-gray-300 flex flex-col space-y-2 bg-white">
-                    <textarea
-                        id="chatInput"
-                        placeholder="${userApiKey ? 'Type your LUA script, game idea, or question here...' : 'Paste your API Key in Models & Pricing to enable chat.'}"
-                        class="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                        onkeydown="handleKeydown(event)"
-                        ${userApiKey ? '' : 'disabled'}
-                    ></textarea>
-
-                    <!-- Send Button (UNDER the text area) -->
-                    <button
-                        id="sendButton"
-                        onclick="generateAIResponse()"
-                        class="rblx-button w-full md:w-1/4 self-end py-2 text-sm"
-                        ${userApiKey ? '' : 'disabled'}
-                    >
-                        Send Message
-                    </button>
-                </div>
-            `;
+        // Initial setup message from Roblox AI
+        window.onload = () => {
+            const initialGrokMessage = 'Welcome to the simulation. I am a Roblox AI model. My goal is maximal efficiency and robust code. Ask me about scripting, building, or performance. Don\'t bother with fluff.';
+            addMessage('grok', initialGrokMessage);
+            userInput.focus();
         };
 
-
-        const modelsViewHtml = () => {
-            const currentKey = userApiKey;
-            return `
-            <div class="p-5">
-                <h2 class="font-bold text-base mb-3 border-b border-gray-300 pb-1">API Key Configuration</h2>
-
-                <!-- API Key Input Panel -->
-                <div class="rblx-panel p-4 mb-6 border-l-4 border-red-500 shadow-lg">
-                    <h3 class="font-bold text-sm mb-3">Your Gemini API Key</h3>
-                    <p class="text-xs text-red-700 mb-3">
-                        <span class="font-bold">CRITICAL:</span> The AI chat requires a key to work outside the hosting environment (like GitHub Pages). This key is saved ONLY in your browser's local storage.
-                    </p>
-                    <input type="text" id="apiKeyInput" placeholder="Paste your Gemini API Key here (e.g., AIzaSy...)" value="${currentKey}" class="w-full p-2 mb-2 border border-gray-300 rounded-sm text-sm">
-                    <button onclick="saveApiKey()" class="rblx-button w-full md:w-1/3 py-2 text-sm bg-red-600 border-red-800 hover:bg-red-700">
-                        SAVE KEY
-                    </button>
-                    <p class="text-xs text-gray-500 mt-2">Current Key Status: <strong class="${currentKey ? 'text-green-600' : 'text-red-600'}">${currentKey ? 'SAVED (Ready)' : 'MISSING (Required for chat)'}</strong></p>
-                </div>
-
-                <h2 class="font-bold text-base mb-3 border-b border-gray-300 pb-1 mt-6">AI Models, Capabilities & Monthly Plans</h2>
-                <p class="text-gray-600 mb-4 text-xs">Access to the Pro and Ultra models requires a monthly subscription. The Flash model is provided free of charge for basic development assistance.</p>
-
-                <div class="space-y-4">
-                    <!-- FLASH MODEL CARD (FREE) -->
-                    <div class="rblx-panel p-4 border-l-4 border-green-600 shadow-md">
-                        <h3 class="font-bold text-lg mb-1 text-green-700">GEMINI FLASH</h3>
-                        <p class="text-xs italic text-gray-500 mb-3">Model: ${MODELS.FLASH.name}</p>
-                        <p class="mb-2 text-sm"><strong>Capability:</strong> Quick LUA snippet generation, simple Q&A, and basic debugging.</p>
-                        <p class="mb-3 text-sm"><strong>Best For:</strong> Prototyping, casual users, and learning the basics.</p>
-                        <p class="text-green-600 font-bold text-xl">${MODELS.FLASH.monthly}</p>
-                        <button class="rblx-button mt-3 bg-green-500 border-green-700 hover:bg-green-600" disabled>
-                            ACTIVE (FREE TIER)
-                        </button>
-                    </div>
-
-                    <!-- PRO MODEL CARD (PAID) -->
-                    <div class="rblx-panel p-4 border-l-4 border-blue-600 shadow-md">
-                        <h3 class="font-bold text-lg mb-1 text-blue-700">GEMINI PRO</h3>
-                        <p class="text-xs italic text-gray-500 mb-3">Model: ${MODELS.PRO.name}</p>
-                        <p class="mb-2 text-sm"><strong>Capability:</strong> Advanced logical structure, full game state management, complex data analysis, and detailed asset description generation.</p>
-                        <p class="mb-3 text-sm"><strong>Best For:</strong> Full game prototypes, deep code analysis, handling large script files.</p>
-                        <p class="text-blue-600 font-bold text-xl">${MODELS.PRO.monthly}</p>
-                        <button class="rblx-button mt-3" onclick="switchModel('PRO')">
-                            SUBSCRIBE
-                        </button>
-                    </div>
-
-                     <!-- ULTRA MODEL CARD (PREMIUM PAID) -->
-                    <div class="rblx-panel p-4 border-l-4 border-yellow-600 shadow-md">
-                        <h3 class="font-bold text-lg mb-1 text-yellow-700">GEMINI ULTRA</h3>
-                        <p class="text-xs italic text-gray-500 mb-3">Model: ${MODELS.ULTRA.name}</p>
-                        <p class="mb-2 text-sm"><strong>Capability:</strong> Real-time physics simulation guidance, high-fidelity world-building suggestions, and multi-agent AI planning.</p>
-                        <p class="mb-3 text-sm"><strong>Best For:</strong> Physics engines, realistic NPC behavior, cutting-edge game experiments.</p>
-                        <p class="text-yellow-600 font-bold text-xl">${MODELS.ULTRA.monthly}</p>
-                        <button class="rblx-button mt-3 bg-yellow-600 border-yellow-800 hover:bg-yellow-700" onclick="switchModel('ULTRA')">
-                            SUBSCRIBE
-                        </button>
-                    </div>
-                </div>
-            </div>
-        `;
-        }
-        
-        const forumViewHtml = () => `
-            <div id="forum-content" class="p-5">
-                <h2 class="font-bold text-base mb-3 border-b border-gray-300 pb-1">
-                    Rôblox AI Developer Forum
-                </h2>
-
-                <!-- Current User ID Display -->
-                <div class="rblx-panel bg-yellow-100 border-yellow-500 p-2 mb-4 text-xs font-bold flex flex-col sm:flex-row justify-between items-start sm:items-center">
-                    <span>
-                        <span class="text-red-600">&#x26A0;</span> Your User ID:
-                        <strong id="user-id-display" class="text-green-700 text-sm break-all">${window.userId}</strong>
-                    </span>
-                    <span class="text-gray-600 text-[10px] mt-1 sm:mt-0">(Share this ID with others to collaborate!)</span>
-                </div>
-
-                <!-- NEW POST FORM -->
-                <div class="rblx-panel p-4 mb-6 border-l-4 border-red-500 shadow-lg">
-                    <h3 class="font-bold text-sm mb-3">Start a New Discussion</h3>
-                    <input type="text" id="post-title" placeholder="Enter post title (e.g., 'Help with Raycasting in LUA')" class="w-full p-2 mb-2 border border-gray-300 rounded-sm text-sm">
-                    <textarea id="post-content" placeholder="Write your full post or question here (e.g., 'I am trying to use a remote event to fire...') " class="w-full p-2 mb-3 border border-gray-300 rounded-sm text-sm" rows="4"></textarea>
-                    <button onclick="window.submitForumPost()" class="rblx-button w-full md:w-1/3 py-2 text-sm">
-                        POST TO FORUM
-                    </button>
-                </div>
-
-                <!-- EXISTING POSTS LIST -->
-                <h3 class="font-bold text-sm mb-3 border-b border-gray-300 pb-1">Recent Topics</h3>
-                <div id="posts-container" class="space-y-4 min-h-[200px] border border-gray-300 bg-[#f7f7f7]">
-                    <p class="text-center text-gray-500 p-8">Loading posts...</p>
-                </div>
-            </div>
-        `;
-
-
-        // --- View Controller ---
-
-        /**
-         * Switches the main content display based on the selected view name.
-         */
-        function navigateTo(viewName) {
-            const mainContentDisplay = document.getElementById('main-content-display');
-            const navLinks = document.querySelectorAll('#main-nav a');
-            
-            // 1. Update navigation active state
-            navLinks.forEach(link => {
-                link.classList.remove('active');
-                if (link.textContent.toLowerCase().includes(viewName)) {
-                    link.classList.add('active');
-                }
-            });
-
-            // 2. Clear old content
-            mainContentDisplay.innerHTML = '';
-
-            // 3. Inject new content
-            switch(viewName) {
-                case 'chat':
-                    mainContentDisplay.innerHTML = chatViewHtml();
-                    document.getElementById('chatInput').onkeydown = handleKeydown;
-                    renderChatHistory();
-                    const selector = document.getElementById('modelSelector');
-                    if(selector) selector.value = currentModelKey;
-                    break;
-                case 'models':
-                    mainContentDisplay.innerHTML = modelsViewHtml();
-                    break;
-                case 'forum':
-                    mainContentDisplay.innerHTML = forumViewHtml();
-                    // Load posts only if the forum is the active view and Firebase is ready
-                    if(window.isAuthReady && typeof window.loadForumPosts === 'function') {
-                        window.loadForumPosts();
-                    }
-                    break;
-                default:
-                    mainContentDisplay.innerHTML = `
-                        <div class="rblx-panel p-10 text-center text-gray-500">
-                            <h2 class="font-bold text-base mb-3">${viewName.charAt(0).toUpperCase() + viewName.slice(1)}</h2>
-                            <p>This ${viewName} page is currently under development.</p>
-                        </div>
-                    `;
-            }
-        }
     </script>
 </body>
 </html>
