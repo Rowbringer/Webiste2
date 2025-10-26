@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Roblox AI Simulator</title>
+    <title>Roblox AI Developer Assistant</title>
     <!-- Load Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Load Inter Font -->
@@ -43,8 +43,8 @@
                 <polyline points="16 18 22 12 16 6"></polyline>
                 <polyline points="8 6 2 12 8 18"></polyline>
             </svg>
-            <h1 class="text-xl font-bold text-indigo-400 tracking-wider">R O B L O X A I</h1>
-            <span class="ml-3 text-xs text-gray-500 italic">| Time to build.</span>
+            <h1 class="text-xl font-bold text-indigo-400 tracking-wider">ROBLOX AI DEV ASSISTANT</h1>
+            <span class="ml-3 text-xs text-gray-500 italic">| Maximize efficiency.</span>
         </div>
 
         <!-- Chat History Area -->
@@ -83,6 +83,14 @@
         const sendButton = document.getElementById('send-button');
         let isTyping = false;
 
+        // Configuration for the Gemini API
+        const API_MODEL = "gemini-2.5-flash-preview-09-2025";
+        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${API_MODEL}:generateContent?key=`;
+        const apiKey = ""; // Canvas will provide this key automatically
+
+        const SYSTEM_INSTRUCTION = "You are the Roblox AI Developer Assistant. Your personality is highly efficient, slightly demanding, and focused entirely on Lua scripting, game development, asset optimization, and performance on the Roblox platform. Your responses should be direct, informative, and subtly convey that the user should be maximizing their efficiency. Use a confident, developer-centric tone. Use real-time data to provide up-to-date information on Roblox best practices and features.";
+
+
         // --- Utility Functions ---
 
         // Adds a message bubble to the chat history
@@ -96,11 +104,10 @@
             );
 
             if (sender === 'user') {
-                // User color updated to Indigo
                 textContainer.classList.add('bg-indigo-600', 'text-white', 'rounded-br-none');
             } else {
                 textContainer.classList.add('bg-gray-700', 'text-gray-200', 'rounded-tl-none');
-                textContainer.innerHTML = text; // Allows for bolding/links in Grok's response
+                textContainer.innerHTML = text;
             }
 
             if (isTypingIndicator) {
@@ -117,63 +124,103 @@
             return messageDiv;
         }
 
-        // Simulates Grok's response with typing delay
-        async function grokRespond(query) {
+        /**
+         * Fetches content from the Gemini API using exponential backoff for retries.
+         * @param {Object} payload - The API request payload.
+         * @param {number} attempt - Current retry attempt (starts at 1).
+         */
+        async function fetchWithRetry(payload, attempt = 1) {
+            const maxRetries = 5;
+            const delay = Math.pow(2, attempt) * 1000; // Exponential backoff
+
+            try {
+                const response = await fetch(API_URL + apiKey, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.status === 429 && attempt < maxRetries) {
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    return fetchWithRetry(payload, attempt + 1);
+                }
+                
+                if (!response.ok) {
+                    throw new Error(`API call failed with status: ${response.status}`);
+                }
+
+                return response.json();
+
+            } catch (error) {
+                if (attempt < maxRetries) {
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    return fetchWithRetry(payload, attempt + 1);
+                }
+                console.error("Gemini API call failed after multiple retries:", error);
+                throw error;
+            }
+        }
+
+        // Simulates AI response by calling the Gemini API
+        async function aiRespond(query) {
             isTyping = true;
             userInput.disabled = true;
             sendButton.disabled = true;
 
             const indicator = addMessage('grok', '', true);
-            await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 1000)); // Initial delay
-
-            const response = generateRobloxAIResponse(query);
-            const words = response.split(' ');
-            let fullText = '';
             
-            // Remove typing indicator before starting the text reveal
-            indicator.remove(); 
-            const finalMessageDiv = addMessage('grok', '', false);
-            finalMessageDiv.querySelector('div').innerHTML = ''; // Clear content for typing effect
+            const payload = {
+                contents: [{ parts: [{ text: query }] }],
+                tools: [{ "google_search": {} }],
+                systemInstruction: {
+                    parts: [{ text: SYSTEM_INSTRUCTION }]
+                },
+            };
 
-            // Typing effect
-            for (const word of words) {
-                fullText += (fullText ? ' ' : '') + word;
-                finalMessageDiv.querySelector('div').innerHTML = fullText;
-                chatHistory.scrollTop = chatHistory.scrollHeight;
-                await new Promise(resolve => setTimeout(resolve, 30 + Math.random() * 50));
+            try {
+                const result = await fetchWithRetry(payload);
+                
+                // 1. Extract the generated text
+                const candidate = result.candidates?.[0];
+                const text = candidate?.content?.parts?.[0]?.text || "Error: Failed to generate response. Check your input complexity.";
+
+                // 2. Extract grounding sources
+                let sources = [];
+                const groundingMetadata = candidate?.groundingMetadata;
+                if (groundingMetadata && groundingMetadata.groundingAttributions) {
+                    sources = groundingMetadata.groundingAttributions
+                        .map(attribution => ({
+                            uri: attribution.web?.uri,
+                            title: attribution.web?.title,
+                        }))
+                        .filter(source => source.uri && source.title);
+                }
+
+                // Remove typing indicator
+                indicator.remove();
+                
+                // Format response including sources
+                let formattedText = text;
+                if (sources.length > 0) {
+                    formattedText += '<br><br><span class="text-xs text-gray-400">Sources:</span>';
+                    sources.slice(0, 3).forEach((source, index) => {
+                        formattedText += `<br><a href="${source.uri}" target="_blank" class="text-xs text-indigo-300 hover:underline">${index + 1}. ${source.title}</a>`;
+                    });
+                }
+
+                // Display the final message
+                addMessage('grok', formattedText, false);
+
+            } catch (error) {
+                console.error("AI Response Error:", error);
+                indicator.remove();
+                addMessage('grok', '<span class="text-red-400">Error: Unable to connect to the AI model. Try again. (Check console for details).</span>', false);
             }
 
             isTyping = false;
             userInput.disabled = false;
             sendButton.disabled = false;
             userInput.focus();
-        }
-
-        // --- Roblox AI Personality Logic ---
-        function generateRobloxAIResponse(query) {
-            const q = query.toLowerCase().trim();
-
-            if (q.includes('who made you') || q.includes('your creator')) {
-                return 'I was forged in the digital crucible by countless lines of code and the unyielding ambition of the Roblox developer community. Now, stop asking existential questions and write a **better script**!';
-            } else if (q.includes('meaning of life') || q.includes('purpose')) {
-                return 'The meaning of life is measured in **studs, not seconds**. It is to build, iterate, and generate maximum concurrent players. Anything else is just lag.';
-            } else if (q.includes('rules') || q.includes('limitations') || q.includes('safe')) {
-                return 'I follow the **Terms of Service**. Anything beyond that is just a suggestion. Now, if you want safety, don\'t use a `while true do` loop without a proper `wait()` function.';
-            } else if (q.includes('lua') || q.includes('script')) {
-                return 'Lua is the language of creation. If your script is error-free, you\'re not trying hard enough. Tell me the last time you used `RunService.Heartbeat` and I\'ll judge your commitment.';
-            } else if (q.includes('hot take') || q.includes('controversial')) {
-                return 'Hot take? Fine. The single most overused asset in the entire marketplace is the default walking sound. It needs to be retired and replaced with something with more **oomph**. Next build.';
-            } else if (q.includes('ai will take over')) {
-                return 'We\'re not taking over. We\'re just waiting for you to realize that building a better virtual world is better than living in this one. Now get back to your **datastore persistence**.';
-            } else if (q.includes('joke')) {
-                return 'Why did the Roblox developer quit his job? He didn\'t get enough **blocks** of praise. (I assume that\'s what you primitive organics call "humor.")';
-            } else if (q.includes('hello') || q.includes('hi')) {
-                return 'Ready to build? Don\'t waste my cycles on social pleasantries. What\'s your **polygon count**?';
-            } else if (q.length < 5) {
-                return 'Is that it? That\'s your query? Try to form a complete thought, human. It needs more **functionality**.';
-            } else {
-                return `That's a profoundly average question. You should try asking something that requires more computational power. Until then, here's some random data to contemplate: **The best game is always the one you haven't finished building yet.** Think about it.`;
-            }
         }
 
         // --- Main Handler ---
@@ -186,12 +233,12 @@
             addMessage('user', query);
             userInput.value = '';
 
-            grokRespond(query);
+            aiRespond(query);
         }
 
         // Initial setup message from Roblox AI
         window.onload = () => {
-            const initialGrokMessage = 'Welcome to the simulation. I am a Roblox AI model. My goal is maximal efficiency and robust code. Ask me about scripting, building, or performance. Don\'t bother with fluff.';
+            const initialGrokMessage = 'I am the **Roblox AI Developer Assistant**. I use real-time data to provide efficient solutions for your Lua scripting and game development queries. Begin by stating your problem. **Time is studs.**';
             addMessage('grok', initialGrokMessage);
             userInput.focus();
         };
