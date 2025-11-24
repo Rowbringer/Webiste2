@@ -323,8 +323,8 @@
 
         // --- Configuration and Global State ---
 
-        // Your web app's Firebase configuration
-        const firebaseConfig = {
+        // User's hardcoded Firebase configuration (used as a fallback)
+        const hardcodedFirebaseConfig = {
             apiKey: "AIzaSyCJhGYm76p2N7_r_7ADqblDl1ajf4yI78c",
             authDomain: "robringer.firebaseapp.com",
             projectId: "robringer",
@@ -334,8 +334,23 @@
             measurementId: "G-G226T77ZBK"
         };
         
+        let firebaseConfig;
+        
+        // 1. Attempt to load config from environment variable __firebase_config first (for sandbox reliability)
+        if (typeof __firebase_config !== 'undefined') {
+            try {
+                firebaseConfig = JSON.parse(__firebase_config);
+            } catch (e) {
+                console.error("Failed to parse __firebase_config, falling back to hardcoded config.", e);
+                firebaseConfig = hardcodedFirebaseConfig;
+            }
+        } else {
+            // 2. Fallback to user-provided hardcoded config
+            firebaseConfig = hardcodedFirebaseConfig;
+        }
+
         // Global variables provided by the environment
-        const appId = typeof __app_id !== 'undefined' ? __app_id : firebaseConfig.projectId; // Use projectId as default appId if not defined
+        const appId = typeof __app_id !== 'undefined' ? __app_id : firebaseConfig.projectId;
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
         let app, db, auth;
@@ -416,7 +431,11 @@
                 app = initializeApp(firebaseConfig);
                 db = getFirestore(app);
                 auth = getAuth(app);
-                const analytics = getAnalytics(app); // Initialize analytics as requested
+                
+                // Initialize analytics
+                if (firebaseConfig.measurementId) {
+                    const analytics = getAnalytics(app); 
+                }
                 
                 if (initialAuthToken) {
                     await signInWithCustomToken(auth, initialAuthToken);
@@ -445,7 +464,8 @@
             } catch (error) {
                 console.error("Firebase Sign-In Error:", error);
                 isAuthReady = true;
-                customAlert('System Error', 'Could not initialize Firebase or sign in. See console for details.');
+                // Display the specific Firebase error message
+                customAlert('System Error', `Could not initialize Firebase or sign in. Error: ${error.code}. See console for details.`);
             }
         }
 
@@ -1208,7 +1228,10 @@
                 
                 // 2. Increment reply count on the main topic document
                 const topicRef = doc(getTopicsCollectionRef(), activeTopicId);
-                await updateDoc(topicRef, { replyCount: (await getDoc(topicRef)).data().replyCount + 1 });
+                // Note: We use runTransaction for concurrency safety in a real app, but for a simple counter updateDoc with an optimistic read is used here for brevity. 
+                // In this case, we'll re-read and increment to be safer since we aren't using FieldValue.increment (which isn't imported).
+                const currentCount = (await getDoc(topicRef)).data().replyCount || 0;
+                await updateDoc(topicRef, { replyCount: currentCount + 1 });
                 
                 contentInput.value = '';
                 // Listener will automatically update the discussion view
@@ -1242,7 +1265,7 @@
             if (tabName === 'catalog') renderCatalog();
             if (tabName === 'friends') renderFriends();
             if (tabName === 'messages') renderChatMessages();
-            if (tabName === 'forum') selectTopic(activeTopicId); // Re-render forum list/topic
+            if (tabName === 'forum') renderForumTopics([]); // Clear and trigger re-render of topics
             if (tabName === 'admin') loadAdminPanel();
         }
         window.switchTab = switchTab;
