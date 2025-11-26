@@ -64,12 +64,20 @@
         outline: 2px solid #ff0000;
         outline-offset: 2px;
       }
+
+      /* Countdown styling */
+      #countdown {
+        font-size: 1.4rem;
+        font-weight: bold;
+        color: #0055aa;
+        margin-top: 30px;
+      }
     </style>
   </head>
   <body>
     <h1>ROBRINGER!</h1>
 
-    <div><h1>downloads(COMING SOON)</h1></div>
+    <div><h1>downloads (COMING SOON)</h1></div>
 
     <p>
       <a href="https://google.com/">download robringer version 1.0</a>
@@ -80,5 +88,36 @@
     <div>
       <h1>click on any version — you will be led to a third party site where you can download</h1>
     </div>
+
+    <!-- Countdown Timer -->
+    <div id="countdown"></div>
+
+    <script>
+      // Set target date (Christmas 2025)
+      var countDownDate = new Date("Dec 25, 2025 00:00:00").getTime();
+
+      // Update every second
+      var x = setInterval(function() {
+        var now = new Date().getTime();
+        var distance = countDownDate - now;
+
+        // Time calculations
+        var days = Math.floor(distance / (1000 * 60 * 60 * 24));
+        var hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+        var seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+        // Display result
+        document.getElementById("countdown").innerHTML =
+          "First release drops in: " + days + "d " + hours + "h "
+          + minutes + "m " + seconds + "s ";
+
+        // If countdown finished
+        if (distance < 0) {
+          clearInterval(x);
+          document.getElementById("countdown").innerHTML = "🎉 The first release is out now!";
+        }
+      }, 1000);
+    </script>
   </body>
 </html>
