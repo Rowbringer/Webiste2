@@ -2,15 +2,14 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title>robringer</title>
+    <title>Roblox 2012 Inspired Page</title>
     <style>
-      /* Roblox 2012-inspired styling */
-
+      /* General body styling for light gray background and classic font */
       body {
         margin: 0;
         padding: 0;
         font-family: Verdana, Arial, sans-serif;
-        background-color: #e3e3e3; /* light gray background */
+        background-color: #e3e3e3; /* Light gray background */
         color: #000000;
         text-align: center;
       }
@@ -21,13 +20,25 @@
         margin: 30px 0 20px;
         color: #ff0000; /* Roblox red */
         font-weight: bold;
-        text-shadow: 2px 2px 0px #ffffff; /* retro outline effect */
+        text-shadow: 2px 2px 0px #ffffff; /* Retro outline effect */
       }
 
-      /* Section headers */
-      div h1 {
+      /* Container for the main content block */
+      #content-container {
+        width: 80%;
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #ffffff; /* White content box */
+        border: 1px solid #c9c9c9;
+        border-radius: 5px; /* Slight rounding */
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      }
+
+      /* Section headers within the container */
+      #content-container h2 {
         font-size: 1.6rem;
-        margin: 25px 0 15px;
+        margin: 15px 0;
         color: #333333;
         font-weight: bold;
       }
@@ -37,32 +48,37 @@
         margin: 20px 0;
         font-size: 1rem;
         color: #111111;
+        line-height: 1.5;
       }
 
       /* Classic blue download buttons */
-      a {
+      a.download-button {
         display: inline-block;
         margin: 8px;
         padding: 10px 20px;
-        background: linear-gradient(#3a8dde, #1c5aa6); /* glossy gradient */
+        /* Glossy blue gradient */
+        background: linear-gradient(to bottom, #3a8dde 0%, #1c5aa6 100%);
         color: #ffffff;
         text-decoration: none;
         font-weight: bold;
         border: 1px solid #0f3d73;
-        border-radius: 2px; /* minimal rounding */
-        box-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-        transition: background 0.2s ease;
+        border-radius: 4px; /* Slightly more rounded than the previous minimal */
+        box-shadow: 0 2px 0 #0f3d73, 0 3px 6px rgba(0,0,0,0.3); /* Button depth and shadow */
+        transition: background 0.2s ease, transform 0.1s ease;
+        text-shadow: 0 -1px 0 rgba(0,0,0,0.3);
       }
 
       /* Hover effect */
-      a:hover {
-        background: linear-gradient(#4fa3f7, #2a6fc2);
+      a.download-button:hover {
+        background: linear-gradient(to bottom, #4fa3f7 0%, #2a6fc2 100%);
+        box-shadow: 0 2px 0 #0f3d73, 0 5px 8px rgba(0,0,0,0.4);
       }
 
-      /* Focus effect */
-      a:focus {
-        outline: 2px solid #ff0000;
-        outline-offset: 2px;
+      /* Active (click) effect */
+      a.download-button:active {
+        background: #1c5aa6;
+        transform: translateY(1px); /* Pressed effect */
+        box-shadow: 0 1px 0 #0f3d73;
       }
 
       /* Countdown styling */
@@ -70,31 +86,37 @@
         font-size: 1.4rem;
         font-weight: bold;
         color: #0055aa;
-        margin-top: 30px;
+        margin: 30px 0;
+        padding: 10px;
+        background-color: #f0f0f0;
+        border: 1px solid #ccc;
+        border-radius: 3px;
+        display: inline-block;
       }
     </style>
   </head>
   <body>
     <h1>ROBRINGER!</h1>
 
-    <div><h1>downloads (COMING SOON)</h1></div>
+    <div id="content-container">
+      <h2>Downloads (COMING SOON)</h2>
+      
+      <p>
+        <a href="https://google.com/" class="download-button">download robringer version 1.0</a>
+        <a href="https://google.com/" class="download-button">download robringer version 2.0</a>
+        <a href="https://google.com/" class="download-button">download robringer version 3.0</a>
+      </p>
 
-    <p>
-      <a href="https://google.com/">download robringer version 1.0</a>
-      <a href="https://google.com/">download robringer version 2.0</a>
-      <a href="https://google.com/">download robringer version 3.0</a>
-    </p>
+      <p>
+        Click on any version—you will be led to a third-party site where you can download.
+      </p>
 
-    <div>
-      <h1>click on any version — you will be led to a third party site where you can download</h1>
+      <div id="countdown"></div>
     </div>
 
-    <!-- Countdown Timer -->
-    <div id="countdown"></div>
-
     <script>
-      // Set target date (Christmas 2025)
-      var countDownDate = new Date("Dec 25, 2025 00:00:00").getTime();
+      // Set target date to January 29, 2026
+      var countDownDate = new Date("Jan 29, 2026 00:00:00").getTime();
 
       // Update every second
       var x = setInterval(function() {
